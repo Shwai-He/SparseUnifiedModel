@@ -25,16 +25,19 @@ As a result, our BAGEL model achieves comparable performance to the full model w
 
 ---
 
-## 🧩 Key Features
+## 🧩 Modeling Files
 
-- **Training-free probing and compression**
-  - Depth and width reduction on unified multimodal backbones.
-- **Expert-Frozen Tuning**
-  - Efficient adaptation to leverage partitioned experts.
-- **MoE Adaptation**
-  - Dynamic activation to enhance performance with limited compute.
-- **Component-wise analysis**
-  - Understanding vs. generation compression sensitivity.
+This repository integrates and adapts modeling files from [**BAGEL**](https://github.com/ByteDance-Seed/Bagel), [**Ming-Omni**](https://github.com/inclusionAI/Ming/tree/main), and [**Qwen-Image**](https://github.com/QwenLM/Qwen-Image) for unified multimodal experimentation.  
+Each model retains its original implementation style, while we introduce targeted modifications to ensure **compatibility**, **efficiency**, and enable **depth pruning** and **width reduction** within a unified compression framework.
+
+The corresponding modified files are listed below:
+
+- **BAGEL** → `modeling/bagel/bagel.py`  
+- **Ming-Omni** → `Ming/modeling_bailingmm.py`  
+- **Qwen-Image** → `diffusers/pipelines/qwenimage/modeling_qwen2_5_vl.py`  
+
+These adaptations provide consistent layer and dimension interfaces across heterogeneous architectures, allowing fine-grained control of model components during pruning and compression analysis.
+
 
 ---
 
