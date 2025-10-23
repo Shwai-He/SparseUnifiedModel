@@ -113,13 +113,13 @@ This notebook provides a practical example of converting dense modules into spar
 
 ## 📂 Code Structure
 
-SparseUnifiedModel/
-├── modeling/ # Core model definitions (BAGEL, Ming-Omni, Qwen-Image)
-│ └── bagel/ # Adapted BAGEL model implementation
-│
-├── Ming/ # Ming-Omni modeling files
-│ └── modeling_bailingmm.py
-│
+SparseUnifiedModel/  
+├── modeling/ # Core model definitions (BAGEL, Ming-Omni, Qwen-Image)  
+│ └── bagel/ # Adapted BAGEL model implementation  
+│  
+├── Ming/ # Ming-Omni modeling files  
+│ └── modeling_bailingmm.py  
+│  
 ├── diffusers/ # Adapted Qwen-Image modeling and supporting modules
 │ └── pipelines/qwenimage/ # Unified multimodal generation pipelines
 │ ├── modeling_qwen2_5_vl.py
