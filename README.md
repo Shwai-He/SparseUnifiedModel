@@ -74,14 +74,14 @@ Prunes less active neurons for the current task to produce a compact yet express
 **Evaluation Commands**
 
 - **Understanding:**  
-
-bash eval/vlm/evaluate.sh
+  ```bash
+  bash eval/vlm/evaluate.sh
 
 - **Generation:**  
-
-bash scripts/eval/bagel/run_geneval_wr.sh
-bash scripts/eval/ming/run_geneval_wr.sh
-bash scripts/eval/qwen/run_geneval_wr.sh
+  ```bash
+  bash scripts/eval/bagel/run_geneval_wr.sh
+  bash scripts/eval/ming/run_geneval_wr.sh
+  bash scripts/eval/qwen/run_geneval_wr.sh
 
 Example usage for partitioning neurons in understanding and generation components is provided in the scripts above.
 
@@ -93,8 +93,8 @@ Partitions the generation component into multiple experts to facilitate MoE adap
 
 **Notebook Example**
 
-dense2sparse.ipynb
-
+  ```bash
+  dense2sparse.ipynb
 
 This notebook provides a practical example of converting dense modules into sparse expert-based structures for adaptive computation
 
