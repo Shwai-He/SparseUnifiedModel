@@ -94,7 +94,6 @@ Partitions the generation component into multiple experts to facilitate MoE adap
 - **Notebook Example**
   ```
   dense2sparse.ipynb
-
 This notebook provides a practical example of converting dense modules into sparse expert-based structures for adaptive computation
 
 
