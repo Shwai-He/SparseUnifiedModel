@@ -25,6 +25,16 @@ As a result, our BAGEL model achieves comparable performance to the full model w
 
 ![Diagram of Efficient UG](efficient_ug.svg)
 
+--- 
+##  📦 Installation
+
+```bash
+conda create -n effcient_ug python=3.10
+conda activate effcient_ug
+
+pip install -r requirements.txt
+```
+
 ---
 
 ## 🧩 Modeling Files
@@ -42,7 +52,7 @@ These adaptations provide consistent layer and dimension interfaces across heter
 
 ---
 
-## Core Techniques and Evaluation
+## ⚙️ Core Techniques and Evaluation
 
 This repository implements three core efficiency-oriented techniques for unified multimodal models:  
 **(1)** Depth Pruning via Layer Dropping,  
@@ -103,3 +113,46 @@ This notebook provides a practical example of converting dense modules into spar
 
 ## 📂 Code Structure
 
+SparseUnifiedModel/
+├── modeling/ # Core model definitions (BAGEL, Ming-Omni, Qwen-Image)
+│ └── bagel/ # Adapted BAGEL model implementation
+│
+├── Ming/ # Ming-Omni modeling files
+│ └── modeling_bailingmm.py
+│
+├── diffusers/ # Adapted Qwen-Image modeling and supporting modules
+│ └── pipelines/qwenimage/ # Unified multimodal generation pipelines
+│ ├── modeling_qwen2_5_vl.py
+│ ├── pipeline_qwenimage.py
+│ └── pipeline_qwenimage_img2img.py
+│
+├── data/ # Data utilities for loading and preprocessing multimodal inputs
+│ ├── data_utils.py
+│ └── transforms.py
+│
+├── eval/ # Evaluation scripts for understanding and generation tasks
+│ ├── vlm/ # Multimodal understanding evaluation
+│ └── scripts/ # Generation task evaluations (e.g., Bagel/Ming/Qwen)
+│
+├── scripts/ # Shell scripts for task-specific evaluation
+│ ├── eval/bagel/
+│ ├── eval/ming/
+│ └── eval/qwen/
+│
+├── utils/ # Utility functions shared across models and tasks
+│
+├── dense2sparse.ipynb # Expert partitioning and dense-to-sparse MoE preparation
+├── neuron_partition.py # Neuron importance and partitioning for width reduction
+├── inference.ipynb # Example inference and pruning workflow
+├── inferencer.py # Unified inference interface
+│
+├── efficient_ug.svg # Architecture overview illustration
+├── prompts.txt # Example input prompts
+├── requirements.txt # Environment dependencies
+├── LICENSE
+└── README.md
+
+
+## 📬 Contact Us
+For any questions or collaborations, feel free to reach out:  
+📧 **shwai.he@bytedance.com**, **sheny@bytedance.com**
