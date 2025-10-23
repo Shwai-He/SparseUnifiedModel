@@ -91,10 +91,10 @@ Example usage for partitioning neurons in understanding and generation component
 
 Partitions the generation component into multiple experts to facilitate MoE adaptation, enabling sparse activation and improving flexibility during subsequent expert-based fine-tuning.
 
-**Notebook Example**
-
-  ```bash
+- **Notebook Example**
+  ```
   dense2sparse.ipynb
+
 
 This notebook provides a practical example of converting dense modules into sparse expert-based structures for adaptive computation
 
