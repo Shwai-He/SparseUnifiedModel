@@ -25,6 +25,8 @@ As a result, our BAGEL model achieves comparable performance to the full model w
 
 ---
 
+![Diagram of Efficient UG](efficient_ug.svg)
+
 ## 🧩 Modeling Files
 
 This repository integrates and adapts modeling files from [**BAGEL**](https://github.com/ByteDance-Seed/Bagel), [**Ming-Omni**](https://github.com/inclusionAI/Ming/tree/main), and [**Qwen-Image**](https://github.com/QwenLM/Qwen-Image) for unified multimodal experimentation.  
@@ -40,6 +42,10 @@ These adaptations provide consistent layer and dimension interfaces across heter
 
 
 ---
+
+
+
+
 
 ## 📂 Code Structure
 
