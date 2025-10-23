@@ -85,6 +85,10 @@ Prunes less active neurons for the current task to produce a compact yet express
 
 Example usage for partitioning neurons in understanding and generation components is provided in the scripts above.
 
+- **Example of partitioning neurons for understanding and generation**:
+  ```bash
+  neuron_partition.py
+
 ---
 
 ### Expert Partitioning for MoE Preparation
