@@ -14,8 +14,8 @@ seed=42
 calibration_samples=1
 keep_ratio=0.5
 sparse_mode=prune # random prune
-compressed_layers_gen="0-0"
 compressed_layers_und="0-28"
+compressed_layers_gen="0-0"
 
 label=${sparse_mode}/${compressed_layers_und}+${compressed_layers_gen}/${keep_ratio}/${calibration_samples}/seed${seed}
 OUTPUT_DIR=$model_path/geneval/width/$label

@@ -42,17 +42,62 @@ These adaptations provide consistent layer and dimension interfaces across heter
 
 ---
 
-## Running Scripts 
+## Core Techniques and Evaluation
 
-Layer Dropping  for Depth Pruning
+This repository implements three core efficiency-oriented techniques for unified multimodal models:  
+**(1)** Depth Pruning via Layer Dropping,  
+**(2)** Width Reduction via Neuron Partitioning, and  
+**(3)** Expert Partitioning for MoE Preparation.  
 
-
-Neuron Partition for Width Reduction
-
-
-Expert Partition for MoE Preparation 
+Each method includes corresponding evaluation scripts for both **understanding** and **generation** tasks.
 
 ---
+
+### Depth Pruning via Layer Dropping
+Reduces inference depth while maintaining reasoning and multimodal understanding capabilities.
+
+**Evaluation Commands**
+- **Understanding:**  
+  ```bash
+  bash eval/vlm/evaluate_ld.sh
+
+- **Generation:**  
+  ```bash
+  bash scripts/eval/bagel/run_geneval_ld.sh
+  bash scripts/eval/ming/run_geneval_ld.sh
+  bash scripts/eval/qwen/run_geneval_ld.sh
+
+### Width Reduction via Neuron Partitioning
+
+Prunes less active neurons for the current task to produce a compact yet expressive model that preserves task-specific diversity.
+
+**Evaluation Commands**
+
+- **Understanding:**  
+
+bash eval/vlm/evaluate.sh
+
+- **Generation:**  
+
+bash scripts/eval/bagel/run_geneval_wr.sh
+bash scripts/eval/ming/run_geneval_wr.sh
+bash scripts/eval/qwen/run_geneval_wr.sh
+
+Example usage for partitioning neurons in understanding and generation components is provided in the scripts above.
+
+---
+
+### Expert Partitioning for MoE Preparation
+
+Partitions the generation component into multiple experts to facilitate MoE adaptation, enabling sparse activation and improving flexibility during subsequent expert-based fine-tuning.
+
+**Notebook Example**
+
+dense2sparse.ipynb
+
+
+This notebook provides a practical example of converting dense modules into sparse expert-based structures for adaptive computation
+
 
 ## 📂 Code Structure
 

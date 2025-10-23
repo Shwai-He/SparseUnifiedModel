@@ -20,8 +20,7 @@ echo "Selected free port: $port"
 
 export MASTER_PORT=$port
 
-DATASET=${1}
-
+DATASET="mme"
 keep_ratio=1.0 # 0.5
 compressed_layers_und="0-28"
 calibration_samples=5
