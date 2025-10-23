@@ -40,12 +40,19 @@ The corresponding modified files are listed below:
 
 These adaptations provide consistent layer and dimension interfaces across heterogeneous architectures, allowing fine-grained control of model components during pruning and compression analysis.
 
-
 ---
 
+## Running Scripts 
+
+Layer Dropping  for Depth Pruning
 
 
+Neuron Partition for Width Reduction
 
+
+Expert Partition for MoE Preparation 
+
+---
 
 ## 📂 Code Structure
 
