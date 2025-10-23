@@ -23,9 +23,9 @@ Through expert-frozen tuning and fully trainable adaptation, we show that sparse
 
 As a result, our BAGEL model achieves comparable performance to the full model while activating only about half of its parameters, offering new insights into efficient unified multimodal modeling.
 
----
-
 ![Diagram of Efficient UG](efficient_ug.svg)
+
+---
 
 ## 🧩 Modeling Files
 
