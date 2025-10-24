@@ -52,6 +52,16 @@ These adaptations provide consistent layer and dimension interfaces across heter
 
 ---
 
+We provide several toy example notebooks to help you quickly run inference with different unified multimodal backbones:
+
+| Model | Notebook | Description |
+|--------|-------------------------------|-----------------------------|
+| **BAGEL** | `inference_bagel.ipynb` | Basic inference demo for BAGEL-based unified models |
+| **Qwen-Image** | `inference_qwen.ipynb` | Image–text multimodal inference with Qwen-Image |
+| **Ming-Omni** | `Ming/inference_ming.ipynb` | Inference example for Ming-Omni models |
+
+--- 
+
 ## ⚙️ Core Techniques and Evaluation
 
 This repository implements three core efficiency-oriented techniques for unified multimodal models:  
