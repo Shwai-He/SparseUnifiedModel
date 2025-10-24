@@ -52,6 +52,8 @@ These adaptations provide consistent layer and dimension interfaces across heter
 
 ---
 
+## 🚀 Quickstart Notebooks
+
 We provide several toy example notebooks to help you quickly run inference with different unified multimodal backbones:
 
 | Model | Notebook | Description |
