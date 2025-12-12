@@ -1,8 +1,7 @@
 # Copyright (c) 2023 OpenGVLab
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/OpenGVLab/InternVL/blob/main/LICENSE.
@@ -53,8 +52,8 @@ echo "GPUS: ${GPUS}"
 
 # exit 0
 
-cd /mnt/bn/seed-aws-va/shwai.he/cdt-hf
-model_path=/mnt/bn/seed-aws-va/shwai.he/models/ByteDance-Seed/BAGEL-7B-MoT
+
+model_path="your_model_path"
 
 if  [ ${DATASET} == "mme" ]; then
 

@@ -232,8 +232,7 @@ def run_calibration_loop(
 
 
 mode = "und"
-model_path = "your_model_path"  # Download from https://huggingface.co/ByteDance-Seed/BAGEL-7B-MoT
-model, tokenizer, vae_model, vae_transform, vit_transform, new_token_ids = build_bagel_model(
+model_path = "your_model_path"  model, tokenizer, vae_model, vae_transform, vit_transform, new_token_ids = build_bagel_model(
     model_path,
     dtype=torch.bfloat16,
     max_mem_per_gpu="80GiB",

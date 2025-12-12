@@ -1,8 +1,7 @@
 # Copyright (c) 2024 The Qwen Team and The HuggingFace Inc. team.
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: Apache-2.0
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under Apache-2.0, with the full license text
 # available at https://github.com/huggingface/transformers/blob/main/LICENSE.
@@ -695,7 +694,7 @@ class PackedAttentionMoT(Qwen2Attention):
         #     import os
 
         #     # may have some mistake in the steps since cfg leads the model to forward more than 1 time. 
-        #     attn_dir = f"/mnt/bn/seed-aws-va/shwai.he/cdt-hf/analysis/attn_scores_{mode}"
+        #     attn_dir = f"analysis/attn_scores_{mode}"
         #     t = 0
         #     while os.path.exists(os.path.join(attn_dir, f"attn_weights_t{t}/{self.layer_idx}.pt")):
         #         t += 1
@@ -1123,9 +1122,9 @@ class Qwen2MoTDecoderLayer(nn.Module):
 
 
         # if mode == "gen":
-        #     log_path = "/mnt/bn/seed-aws-va/shwai.he/cdt-hf/gen_cos_mag.txt"
+        #     log_path = "gen_cos_mag.txt"
         # else: 
-        #     log_path = "/mnt/bn/seed-aws-va/shwai.he/cdt-hf/und_cos_mag.txt"
+        #     log_path = "und_cos_mag.txt"
 
         # print(f"Cache layers: {len(past_key_values.key_cache)}")
 

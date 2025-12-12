@@ -1,8 +1,7 @@
 # Copyright (c) 2023 OpenGVLab
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/OpenGVLab/InternVL/blob/main/LICENSE.
@@ -426,7 +425,7 @@ if __name__ == '__main__':
     parser.add_argument('--datasets', type=str, default='mmbench_dev_20230712')
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--num-workers', type=int, default=1)
-    parser.add_argument('--out-dir', type=str, default='/mnt/bn/seed-aws-va/shwai.he/cdt-hf/results/Ming/MMBench')
+    parser.add_argument('--out-dir', type=str, default='results/Ming/MMBench')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--model-path', type=str, default='hf/BAGEL-7B-MoT/')
     parser.add_argument('--keep_ratio', type=float, default=1.0)
@@ -466,7 +465,7 @@ if __name__ == '__main__':
 
     torch.cuda.set_device(int(os.getenv('LOCAL_RANK', 0)))
 
-    model_path = "/mnt/bn/seed-aws-va/shwai.he/models/inclusionAI/Ming-Lite-Omni-1.5" ####
+    model_path = "your_model_path" ####
     model = BailingMMNativeForConditionalGeneration.from_pretrained(
         model_path,
         torch_dtype=torch.bfloat16,  # Use bfloat16 for memory efficiency
@@ -502,9 +501,9 @@ if __name__ == '__main__':
                 with open(file_path, 'rb') as file:
                     return pickle.load(file)
 
-            gen = f"/mnt/bn/seed-aws-va/shwai.he/cdt-hf/data/heads/image_gen/combined/mlp_concatenated_scores_gen.pkl"
-            und = f"/mnt/bn/seed-aws-va/shwai.he/cdt-hf/data/heads/UG/combined/mlp_concatenated_scores_und.pkl"
-            und = f"/mnt/bn/seed-aws-va/shwai.he/cdt-hf/data/heads/{task}/combined/mlp_10_concatenated_scores.pkl"
+            gen = f"data/heads/image_gen/combined/mlp_concatenated_scores_gen.pkl"
+            und = f"data/heads/UG/combined/mlp_concatenated_scores_und.pkl"
+            und = f"data/heads/{task}/combined/mlp_10_concatenated_scores.pkl"
 
             scores_gen = read_list_from_file(gen)
             scores_und = read_list_from_file(und)

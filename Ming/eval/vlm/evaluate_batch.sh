@@ -1,8 +1,7 @@
 # Copyright (c) 2023 OpenGVLab
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/OpenGVLab/InternVL/blob/main/LICENSE.
@@ -57,7 +56,7 @@ echo "CHECKPOINT: ${CHECKPOINT}"
 # Save original arguments
 ARGS=("$@")
 
-cd /mnt/bn/seed-aws-va/shwai.he/cdt-hf
+
 
 for keep_ratio in "${Keep_Ratio[@]}"; do
     for calibration_samples in "${Samples[@]}"; do
@@ -116,8 +115,8 @@ for keep_ratio in "${Keep_Ratio[@]}"; do
                                                             --compressed_layers_und $compressed_layers_und \
                                                             --sparse_mode $sparse_mode \
 
-                output_dir=/mnt/bn/seed-aws-va/shwai.he/cdt-hf/results/understanding/MMBench/$datasets/$compressed_layers_und/$sparse_mode/sparsity_${keep_ratio}/samples_${calibration_samples}
-                python /mnt/bn/seed-aws-va/shwai.he/cdt-hf/eval/vlm/eval/mmbench/calculate.py \
+                output_dir=results/understanding/MMBench/$datasets/$compressed_layers_und/$sparse_mode/sparsity_${keep_ratio}/samples_${calibration_samples}
+                python eval/vlm/eval/mmbench/calculate.py \
                                         --output_dir $output_dir > $output_dir/result.txt
 
             fi

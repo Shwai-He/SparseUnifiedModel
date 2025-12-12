@@ -1,8 +1,7 @@
 # Copyright (c) 2023 Dhruba Ghosh
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/djghosh13/geneval/blob/main/LICENSE.

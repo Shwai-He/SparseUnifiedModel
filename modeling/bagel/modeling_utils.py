@@ -1,8 +1,7 @@
 # Copyright (c) 2022 Facebook, Inc. and its affiliates.
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: CC BY-NC 4.0
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under CC BY-NC 4.0, with the full license text
 # available at https://github.com/facebookresearch/DiT/blob/main/LICENSE.txt.

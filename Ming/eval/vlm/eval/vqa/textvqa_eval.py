@@ -1,8 +1,7 @@
 # Copyright (c) 2019 Facebook, Inc. and its affiliates.
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: BSD
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under BSD, with the full license text
 # available at https://github.com/facebookresearch/mmf/blob/main/LICENSE.

@@ -1,4 +1,3 @@
-# Copyright 2025 Bytedance Ltd. and/or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 
 set -x
@@ -8,7 +7,7 @@ GPUS=8
 port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1]); s.close()')
 echo "Selected free port: $port"
 
-model_path=/mnt/bn/seed-aws-va/shwai.he/cdt-hf/hf/BAGEL-7B-MoT
+model_path=hf/BAGEL-7B-MoT
 seed=42
 
 label="baseline"
