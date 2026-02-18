@@ -1,7 +1,5 @@
 # Understanding Slimness and Sparsity in Unified Multimodal Models: An Empirical Study
 
----
-
 [![Task](https://img.shields.io/badge/Task-Unified%20Multimodal-blue)](#)
 [![Focus](https://img.shields.io/badge/Focus-Sparse%20Activation-green)](#)
 [![Python](https://img.shields.io/badge/Python-3.10+-brightgreen)](#)
