@@ -1,8 +1,7 @@
 # Copyright (c) 2023 OpenGVLab
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/OpenGVLab/InternVL/blob/main/LICENSE.
@@ -418,7 +417,7 @@ if __name__ == '__main__':
     parser.add_argument('--datasets', type=str, default='MMMU_validation')
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--num-workers', type=int, default=1)
-    parser.add_argument('--out-dir', type=str, default='/mnt/bn/seed-aws-va/shwai.he/cdt-hf/results/Ming/MMMU')
+    parser.add_argument('--out-dir', type=str, default='results/Ming/MMMU')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--model-path', type=str, default='hf/BAGEL-7B-MoT/')
     parser.add_argument('--calibration_samples', type=int, default=1)
@@ -447,7 +446,7 @@ if __name__ == '__main__':
     if torch.distributed.get_rank() == 0:
         print(f"args.out_dir: {args.out_dir}")
     
-    model_path = "/mnt/bn/seed-aws-va/shwai.he/models/inclusionAI/Ming-Lite-Omni-1.5" ####
+    model_path = "your_model_path" ####
     model = BailingMMNativeForConditionalGeneration.from_pretrained(
         model_path,
         torch_dtype=torch.bfloat16,  # Use bfloat16 for memory efficiency

@@ -1,4 +1,3 @@
-# Copyright 2025 Bytedance Ltd. and/or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -252,8 +251,8 @@ if __name__ == "__main__":
     else: 
         NotImplementedError
 
-    save_path = f"/mnt/bn/seed-aws-va/shwai.he/cdt-hf/scripts/eval/qwen/all_act.pt"
-    scores = torch.load(save_path)
+    save_path = f"your_score_path"
+    scores = None # torch.load(save_path)
 
     if args.keep_ratio < 1.0 and args.strategy == "weight":
         calibration_samples = args.calibration_samples

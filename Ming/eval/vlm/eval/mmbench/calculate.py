@@ -8,12 +8,12 @@ args = parser.parse_args()
 
 # 读取 Excel 文件
 # file_path = "your_file.xlsx"  # ← 把这里替换成你的文件路径
-# file_path = "/mnt/bn/seed-aws-va/shwai.he/cdt-hf/MMBench/sparsity_0.5/results.xlsx"
-# file_path = "/mnt/bn/seed-aws-va/shwai.he/cdt-hf/MMBench/sparsity_1.0/results.xlsx"
+# file_path = "MMBench/sparsity_0.5/results.xlsx"
+# file_path = "MMBench/sparsity_1.0/results.xlsx"
 
 # baseline: 87.98
 
-# file_path = "/mnt/bn/seed-aws-va/shwai.he/cdt-hf/MMBench/sparsity_1.0/samples_5/results.xlsx"
+# file_path = "MMBench/sparsity_1.0/samples_5/results.xlsx"
 file_path = f"{args.output_dir}/results.xlsx"
 
 

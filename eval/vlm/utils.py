@@ -1,8 +1,7 @@
 # Copyright (c) 2023 OpenGVLab
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/OpenGVLab/InternVL/blob/main/LICENSE.
@@ -44,7 +43,7 @@ def load_model_and_tokenizer(args):
     setattr(llm_config, "top_k", top_k)
 
     if not os.path.exists(os.path.join(args.model_path, "vit_config.json")):
-        shutil.copyfile(os.path.join("/mnt/bn/seed-aws-va/shwai.he/cdt-hf/hf/BAGEL-7B-MoT", "vit_config.json"), 
+        shutil.copyfile(os.path.join("hf/BAGEL-7B-MoT", "vit_config.json"), 
                         os.path.join(args.model_path, "vit_config.json"))
 
     vit_config = SiglipVisionConfig.from_json_file(os.path.join(args.model_path, "vit_config.json"))
@@ -83,7 +82,7 @@ def load_model_and_tokenizer(args):
 
 
 def build_transform():
-    with open("/mnt/bn/seed-aws-va/shwai.he/cdt-hf/data/configs/example.yaml", "r") as f:
+    with open("data/configs/example.yaml", "r") as f:
         data_config = yaml.safe_load(f)
 
     max_image_size = data_config['vlm_sft']['image_transform_args']['max_image_size']

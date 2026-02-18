@@ -1,8 +1,7 @@
 # Copyright (c) 2023 OpenGVLab
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/OpenGVLab/InternVL/blob/main/LICENSE.
@@ -151,7 +150,7 @@ def post_processing(response):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', type=str, default='eval/vlm/eval/mme/Your_Results')
-    parser.add_argument('--out-dir', type=str, default='/mnt/bn/seed-aws-va/shwai.he/cdt-hf/results/Ming/MME')
+    parser.add_argument('--out-dir', type=str, default='results/Ming/MME')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--model-path', type=str, default='hf/BAGEL-7B-MoT/')
     parser.add_argument('--keep_ratio', type=float, default=0.5)
@@ -169,7 +168,7 @@ if __name__ == '__main__':
 
     # args.keep_ratio = (args.num_shared_experts + args.top_k) / (args.num_shared_experts + args.num_experts)
 
-    model_path = "/mnt/bn/seed-aws-va/shwai.he/models/inclusionAI/Ming-Lite-Omni-1.5" ####
+    model_path = "your_model_path" ####
     image_transform = build_transform()
 
     task = "mme"

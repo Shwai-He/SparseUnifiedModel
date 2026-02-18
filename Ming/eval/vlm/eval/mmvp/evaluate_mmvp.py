@@ -1,8 +1,7 @@
 # Copyright (c) 2023 OpenGVLab
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/OpenGVLab/InternVL/blob/main/LICENSE.
@@ -310,7 +309,7 @@ if __name__ == '__main__':
     parser.add_argument('--datasets', type=str, default='MMVP')
     parser.add_argument('--batch-size', type=int, default=1)
     parser.add_argument('--num-workers', type=int, default=1)
-    parser.add_argument('--out-dir', type=str, default='/mnt/bn/seed-aws-va/shwai.he/cdt-hf/results/understanding')
+    parser.add_argument('--out-dir', type=str, default='results/understanding')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--model-path', type=str, default='hf/BAGEL-7B-MoT/')
     parser.add_argument('--sparse_mode', type=str, default='prune')

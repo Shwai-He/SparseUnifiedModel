@@ -1,8 +1,7 @@
 # Copyright (c) 2023 OpenGVLab
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/OpenGVLab/InternVL/blob/main/LICENSE.
@@ -66,7 +65,7 @@ echo "CHECKPOINT: ${CHECKPOINT}"
 # Save original arguments
 ARGS=("$@")
 
-cd /mnt/bn/seed-aws-va/shwai.he/Ming
+cd Ming
 
 for DATASET in "${DATASETs[@]}"; do
     for keep_ratio in "${Keep_Ratio[@]}"; do
@@ -95,7 +94,7 @@ for DATASET in "${DATASETs[@]}"; do
                                 --keep_ratio $keep_ratio \
                                 --calibration_samples $calibration_samples \
                                 --compressed_layers_und $compressed_layers_und \
-                                --sparse_mode $sparse_mode > /mnt/bn/seed-aws-va/shwai.he/cdt-hf/results/Ming/MME/log.txt
+                                --sparse_mode $sparse_mode > results/Ming/MME/log.txt
 
                 fi
 
@@ -123,10 +122,10 @@ for DATASET in "${DATASETs[@]}"; do
                                                                 --compressed_layers_und $compressed_layers_und \
                                                                 --sparse_mode $sparse_mode \
                     
-                    output_dir=/mnt/bn/seed-aws-va/shwai.he/cdt-hf/results/Ming/MMBench/$datasets/$compressed_layers_und/${sparse_mode}_${keep_ratio}/samples_${calibration_samples}_no_share
+                    output_dir=results/Ming/MMBench/$datasets/$compressed_layers_und/${sparse_mode}_${keep_ratio}/samples_${calibration_samples}_no_share
                     rm $output_dir/result.txt
 
-                    python /mnt/bn/seed-aws-va/shwai.he/cdt-hf/eval/vlm/eval/mmbench/calculate.py \
+                    python eval/vlm/eval/mmbench/calculate.py \
                                             --output_dir $output_dir > $output_dir/result.txt
 
                 fi
@@ -187,7 +186,7 @@ for DATASET in "${DATASETs[@]}"; do
                     wait 
                     sparse_mode=prune
                     datasets=MMMU_validation
-                    output_dir=/mnt/bn/seed-aws-va/shwai.he/cdt-hf/results/Ming/MMMU/$datasets/$compressed_layers_und/${sparse_mode}_${keep_ratio}/samples_${calibration_samples}
+                    output_dir=results/Ming/MMMU/$datasets/$compressed_layers_und/${sparse_mode}_${keep_ratio}/samples_${calibration_samples}
                     echo $output_dir/log.txt
 
                     mkdir -p  $output_dir

@@ -1,4 +1,3 @@
-# Copyright 2025 Bytedance Ltd. and/or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -187,7 +186,7 @@ if __name__ == "__main__":
     if rank == 0:
         print(f"Output images are saved in {output_dir}")
 
-    model_path = "/mnt/bn/seed-aws-va/shwai.he/models/inclusionAI/Ming-Lite-Omni-1.5"
+    model_path = "your_model_path"
 
     torch_dtype = torch.bfloat16
     device = "cuda"

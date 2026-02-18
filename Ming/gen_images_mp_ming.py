@@ -1,4 +1,3 @@
-# Copyright 2025 Bytedance Ltd. and/or its affiliates.
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -186,9 +185,9 @@ def fewshot_compress(keep_ratio, compressed_layers_und, compressed_layers_gen, c
 
 
         # if record: 
-        #     with open(f"/mnt/bn/seed-aws-va/shwai.he/cdt-hf/data/keep_indices/geneval_{calibration_samples}_und.pkl", 'wb') as file:
+        #     with open(f"data/keep_indices/geneval_{calibration_samples}_und.pkl", 'wb') as file:
         #         pickle.dump(keep_und, file)
-        #     with open(f"/mnt/bn/seed-aws-va/shwai.he/cdt-hf/data/keep_indices/geneval_{calibration_samples}_gen.pkl", 'wb') as file:
+        #     with open(f"data/keep_indices/geneval_{calibration_samples}_gen.pkl", 'wb') as file:
         #         pickle.dump(keep_gen, file)
         #     return
 
@@ -250,7 +249,7 @@ if __name__ == "__main__":
     if rank == 0:
         print(f"Output images are saved in {output_dir}")
 
-    model_path = "/mnt/bn/seed-aws-va/shwai.he/models/inclusionAI/Ming-Lite-Omni-1.5"
+    model_path = "your_model_path"
 
     torch_dtype = torch.bfloat16
     device = "cuda"

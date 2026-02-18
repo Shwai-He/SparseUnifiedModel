@@ -2,10 +2,10 @@ import torch
 from safetensors.torch import load_file, save_file  # 如果你使用 safetensors 格式
 
 # === Step 1: 读取原始 FP32 的 state_dict ===
-state_dict_path = "/mnt/bn/seed-aws-va/shwai.he/cdt-hf/hf/BAGEL-7B-MoT/ema.safetensors"  # 或者 model_fp32.safetensors
-# state_dict_path = "/mnt/bn/seed-aws-va/shwai.he/cdt-hf/hf/BAGEL-7B-MoT/ema_bf16.safetensors"  # 或者 model_fp32.safetensors
+state_dict_path = "hf/BAGEL-7B-MoT/ema.safetensors"  # 或者 model_fp32.safetensors
+# state_dict_path = "hf/BAGEL-7B-MoT/ema_bf16.safetensors"  # 或者 model_fp32.safetensors
 
-state_dict_path = "/mnt/bn/seed-aws-va/shwai.he/cdt-hf/hf/BAGEL-7B-MoT/ae.safetensors"
+state_dict_path = "hf/BAGEL-7B-MoT/ae.safetensors"
 
 use_safetensors = state_dict_path.endswith(".safetensors")
 

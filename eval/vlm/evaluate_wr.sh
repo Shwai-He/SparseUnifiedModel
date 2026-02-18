@@ -1,8 +1,7 @@
 # Copyright (c) 2023 OpenGVLab
-# Copyright (c) 2025 Bytedance Ltd. and/or its affiliates.
+
 # SPDX-License-Identifier: MIT
 #
-# This file has been modified by ByteDance Ltd. and/or its affiliates. on 2025-05-20.
 #
 # Original file was released under MIT, with the full license text
 # available at https://github.com/OpenGVLab/InternVL/blob/main/LICENSE.
@@ -46,8 +45,8 @@ GPUS=$(echo $CUDA_VISIBLE_DEVICES | tr ',' '\n' | wc -l)
 echo "GPUS: ${GPUS}"
 
 
-cd /mnt/bn/seed-aws-va/shwai.he/cdt-hf
-model_path=/mnt/bn/seed-aws-va/shwai.he/models/ByteDance-Seed/BAGEL-7B-MoT
+
+model_path="your_model_path"
 
 if  [ ${DATASET} == "mme" ]; then
   python -m eval.vlm.eval.mme.eval \
@@ -82,8 +81,8 @@ if [ ${DATASET} == "mmbench-dev-en" ]; then
                                                 --sparse_mode $sparse_mode \
                                                 --record_only $record_only \
 
-      output_dir=/mnt/bn/seed-aws-va/shwai.he/cdt-hf/MMBench/$compressed_layers_und/$sparse_mode/sparsity_${keep_ratio}/samples_${calibration_samples}
-      python /mnt/bn/seed-aws-va/shwai.he/cdt-hf/eval/vlm/eval/mmbench/calculate.py \
+      output_dir=MMBench/$compressed_layers_und/$sparse_mode/sparsity_${keep_ratio}/samples_${calibration_samples}
+      python eval/vlm/eval/mmbench/calculate.py \
                             --output_dir $output_dir > $output_dir/result.txt
 
 fi
