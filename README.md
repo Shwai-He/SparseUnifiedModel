@@ -1,159 +1,131 @@
-# Understanding Slimness and Sparsity in Unified Multimodal Models: An Empirical Study
-
-This repository contains the code and experiments for our work on **Efficient Unified Multimodal Modeling**, which studies redundancy and dynamic sparsity in unified models that jointly perform multimodal understanding and generation. The project analyzes how compression and adaptive computation can improve scalability and efficiency in unified multimodal architectures.
+# Understanding and Harnessing Sparsity in Unified Multimodal Models
 
 ---
 
+[![Task](https://img.shields.io/badge/Task-Unified%20Multimodal-blue)](#)
+[![Focus](https://img.shields.io/badge/Focus-Sparse%20Activation-green)](#)
+[![Python](https://img.shields.io/badge/Python-3.10+-brightgreen)](#)
+
+This repository contains the code and experiments for **Efficient Unified Multimodal Modeling (Efficient-UG)**, a study on redundancy and dynamic sparsity in unified models that jointly support multimodal **understanding** and **generation**.
+
+<p align="center">
+  <img src="efficient_ug.svg" alt="Efficient-UG overview" width="72%">
+</p>
+
+## ⚡ TL;DR
+- Unified multimodal models show strong task-dependent redundancy across understanding and generation paths.
+- Generation modules are more compression-sensitive than understanding modules.
+- Sparse expert activation (MoE-style adaptation) recovers generation quality with lower active parameters.
+- The resulting BAGEL variant keeps competitive performance while activating roughly half of parameters.
+
 ## 🔍 Overview
+Unified multimodal models promise one architecture for reasoning and content generation, but this unification introduces non-uniform compute demand across tasks and samples.
 
-Unified multimodal models aim to integrate understanding (e.g., reasoning, classification) and generation (e.g., text-to-image synthesis, captioning) within a single architecture.
-While this unification brings the promise of general-purpose multimodal intelligence, it also introduces inference inefficiencies due to task-specific activation, compute imbalance, and input variability.
-Despite the recent progress, a systematic understanding of where and how these inefficiencies arise across different components remains limited.
+Efficient-UG analyzes these inefficiencies through training-free probing and sparse adaptation, covering:
+1. **Depth Pruning** (layer dropping),
+2. **Width Reduction** (neuron partitioning),
+3. **Expert Partitioning** for sparse MoE preparation.
 
-This project, Efficient-UG, conducts a comprehensive analysis of unified multimodal models using training-free pruning as a probing methodology, covering both depth pruning and width reduction.
-Our study finds that:
+## 📰 News
+- Feb 2026: README reorganized with a cleaner research-repo layout and command flow.
 
-- The understanding components—though crucial for reasoning—can be substantially compressed in generation tasks without severe degradation.
+## ✨ Why This Repo
+This codebase unifies and adapts model components from:
+- [BAGEL](https://github.com/ByteDance-Seed/Bagel)
+- [Ming-Omni](https://github.com/inclusionAI/Ming/tree/main)
+- [Qwen-Image](https://github.com/QwenLM/Qwen-Image)
 
-- The generation components, however, are highly sensitive to compression, with performance dropping sharply even under moderate pruning.
+Key adapted entry files:
+- `modeling/bagel/bagel.py`
+- `Ming/modeling_bailingmm.py`
+- `diffusers/pipelines/qwenimage/modeling_qwen2_5_vl.py`
 
-- To address this imbalance, we introduce Mixture-of-Experts (MoE) Adaptation, inspired by dynamic neuron activation patterns across samples.
-This approach partitions the generation module into multiple experts and activates them sparsely to recover performance.
-Through expert-frozen tuning and fully trainable adaptation, we show that sparse activation restores generation quality while maintaining efficiency.
+These adaptations provide consistent layer/dimension interfaces for systematic pruning and sparse computation studies.
 
-As a result, our BAGEL model achieves comparable performance to the full model while activating only about half of its parameters, offering new insights into efficient unified multimodal modeling.
-
-![Diagram of Efficient UG](efficient_ug.svg)
-
---- 
-##  📦 Installation
-
+## 📦 Installation
 ```bash
-conda create -n effcient_ug python=3.10
-conda activate effcient_ug
+conda create -n efficient_ug python=3.10 -y
+conda activate efficient_ug
 
 pip install -r requirements.txt
 ```
 
----
-
-## 🧩 Modeling Files
-
-This repository integrates and adapts modeling files from [**BAGEL**](https://github.com/ByteDance-Seed/Bagel), [**Ming-Omni**](https://github.com/inclusionAI/Ming/tree/main), and [**Qwen-Image**](https://github.com/QwenLM/Qwen-Image) for unified multimodal experimentation.  
-Each model retains its original implementation style, while we introduce targeted modifications to ensure **compatibility**, **efficiency**, and enable **depth pruning** and **width reduction** within a unified compression framework.
-
-The corresponding modified files are listed below:
-
-- **BAGEL** → `modeling/bagel/bagel.py`  
-- **Ming-Omni** → `Ming/modeling_bailingmm.py`  
-- **Qwen-Image** → `diffusers/pipelines/qwenimage/modeling_qwen2_5_vl.py`  
-
-These adaptations provide consistent layer and dimension interfaces across heterogeneous architectures, allowing fine-grained control of model components during pruning and compression analysis.
-
----
-
-## ⚙️ Core Techniques and Evaluation
-
-This repository implements three core efficiency-oriented techniques for unified multimodal models:  
-**(1)** Depth Pruning via Layer Dropping,  
-**(2)** Width Reduction via Neuron Partitioning, and  
-**(3)** Expert Partitioning for MoE Preparation.  
-
-Each method includes corresponding evaluation scripts for both **understanding** and **generation** tasks.
-
----
-
-### Depth Pruning via Layer Dropping
-Reduces inference depth while maintaining reasoning and multimodal understanding capabilities.
-
-**Evaluation Commands**
-- **Understanding:**  
-  ```bash
-  bash eval/vlm/evaluate_ld.sh
-
-- **Generation:**  
-  ```bash
-  bash scripts/eval/bagel/run_geneval_ld.sh
-  bash scripts/eval/ming/run_geneval_ld.sh
-  bash scripts/eval/qwen/run_geneval_ld.sh
-
-### Width Reduction via Neuron Partitioning
-
-Prunes less active neurons for the current task to produce a compact yet expressive model that preserves task-specific diversity.
-
-**Evaluation Commands**
-
-- **Understanding:**  
-  ```bash
-  bash eval/vlm/evaluate.sh
-
-- **Generation:**  
-  ```bash
-  bash scripts/eval/bagel/run_geneval_wr.sh
-  bash scripts/eval/ming/run_geneval_wr.sh
-  bash scripts/eval/qwen/run_geneval_wr.sh
-
-Example usage for partitioning neurons in understanding and generation components is provided in the scripts above.
-
-- **Example of partitioning neurons for understanding and generation**:
-  ```bash
-  neuron_partition.py
-
----
-
-### Expert Partitioning for MoE Preparation
-
-Partitions the generation component into multiple experts to facilitate MoE adaptation, enabling sparse activation and improving flexibility during subsequent expert-based fine-tuning.
-
-- **Notebook Example**
-  ```
-  dense2sparse.ipynb
-This notebook provides a practical example of converting dense modules into sparse expert-based structures for adaptive computation
-
-
-## 📂 Code Structure
-
+## 🚀 Quick Start
+### 1) Depth Pruning Evaluation
+Understanding:
 ```bash
-SparseUnifiedModel/  
-├── modeling/ # Core model definitions (BAGEL, Ming-Omni, Qwen-Image)  
-│ └── bagel/ # Adapted BAGEL model implementation  
-│  
-├── Ming/ # Ming-Omni modeling files  
-│ └── modeling_bailingmm.py  
-│  
-├── diffusers/ # Adapted Qwen-Image modeling and supporting modules  
-│ └── pipelines/qwenimage/ # Unified multimodal generation pipelines  
-│ ├── modeling_qwen2_5_vl.py  
-│ ├── pipeline_qwenimage.py  
-│ └── pipeline_qwenimage_img2img.py  
-│  
-├── data/ # Data utilities for loading and preprocessing multimodal inputs  
-│ ├── data_utils.py  
-│ └── transforms.py  
-│  
-├── eval/ # Evaluation scripts for understanding and generation tasks  
-│ ├── vlm/ # Multimodal understanding evaluation  
-│ └── scripts/ # Generation task evaluations (e.g., Bagel/Ming/Qwen)  
-│  
-├── scripts/ # Shell scripts for task-specific evaluation  
-│ ├── eval/bagel/  
-│ ├── eval/ming/  
-│ └── eval/qwen/  
-│  
-├── utils/ # Utility functions shared across models and tasks  
-│  
-├── dense2sparse.ipynb # Expert partitioning and dense-to-sparse MoE preparation  
-├── neuron_partition.py # Neuron importance and partitioning for width reduction  
-├── inference.ipynb # Example inference and pruning workflow  
-├── inferencer.py # Unified inference interface  
-│  
-├── efficient_ug.svg # Architecture overview illustration  
-├── prompts.txt # Example input prompts  
-├── requirements.txt # Environment dependencies  
-├── LICENSE  
-└── README.md  
+bash eval/vlm/evaluate_ld.sh
 ```
 
-## 📬 Contact Us
-For any questions or collaborations, feel free to reach out:  
-📧 **shwai.he@bytedance.com**, **sheny@bytedance.com**
+Generation:
+```bash
+bash scripts/eval/bagel/run_geneval_ld.sh
+bash scripts/eval/ming/run_geneval_ld.sh
+bash scripts/eval/qwen/run_geneval_ld.sh
+```
+
+### 2) Width Reduction Evaluation
+Understanding:
+```bash
+bash eval/vlm/evaluate_wr.sh
+```
+
+Generation:
+```bash
+bash scripts/eval/bagel/run_geneval_wr.sh
+bash scripts/eval/ming/run_geneval_wr.sh
+bash scripts/eval/qwen/run_geneval_wr.sh
+```
+
+### 3) Neuron Partitioning Example
+```bash
+python neuron_partition.py
+```
+
+### 4) Dense-to-Sparse Expert Conversion
+Use:
+- `dense2sparse.ipynb`
+
+This notebook demonstrates converting dense generation modules into sparse expert-style structures for adaptive activation.
+
+## 🧠 Core Methods
+1. **Depth Pruning via Layer Dropping**
+- Reduces inference depth while preserving multimodal understanding quality as much as possible.
+
+2. **Width Reduction via Neuron Partitioning**
+- Identifies and prunes less active neurons for task-specific compactness.
+
+3. **Expert Partitioning for MoE Preparation**
+- Splits generation modules into experts for sparse activation and later expert-based adaptation.
+
+## 🗂️ Repository Layout
+```text
+SparseUnifiedModel/
+├── modeling/                      # Core model definitions (BAGEL, Ming-Omni, Qwen-Image)
+│   └── bagel/
+├── Ming/                          # Ming-Omni related modeling files
+│   └── modeling_bailingmm.py
+├── diffusers/                     # Adapted Qwen-Image modules and pipelines
+│   └── pipelines/qwenimage/
+├── data/                          # Data preprocessing utilities
+├── eval/                          # Evaluation for understanding and generation
+│   └── vlm/
+├── scripts/                       # Shell launchers for different models/tasks
+│   └── eval/
+├── utils/                         # Shared utility functions
+├── dense2sparse.ipynb             # Dense-to-sparse MoE preparation demo
+├── neuron_partition.py            # Neuron importance analysis and partitioning
+├── inference.ipynb                # Inference/pruning walkthrough
+├── inferencer.py                  # Unified inference interface
+├── efficient_ug.svg               # Project figure
+├── prompts.txt                    # Example prompts
+├── requirements.txt
+└── README.md
+```
+
+## 📄 Citation
+If you use this repository in your research, please cite the associated paper when available.
+
+## 📬 Contact
+- `shwai.he@bytedance.com`
+- `sheny@bytedance.com`
