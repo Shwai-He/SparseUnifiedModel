@@ -1,6 +1,7 @@
 <h1 align="center">Understanding Slimness and Sparsity in Unified Multimodal Models: An Empirical Study</h1>
 
 <p align="center">
+  <a href="https://arxiv.org/abs/2512.02351"><img src="https://img.shields.io/badge/arXiv-2512.02351-b31b1b" alt="arXiv"></a>
   <img src="https://img.shields.io/badge/Task-Unified%20Multimodal-blue" alt="Task">
   <img src="https://img.shields.io/badge/Focus-Sparse%20Activation-green" alt="Focus">
   <img src="https://img.shields.io/badge/Python-3.10+-brightgreen" alt="Python">
