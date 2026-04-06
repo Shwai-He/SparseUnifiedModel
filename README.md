@@ -1,9 +1,9 @@
 <h1 align="center">Understanding Slimness and Sparsity in Unified Multimodal Models: An Empirical Study</h1>
 
 <p align="center">
-[![Task](https://img.shields.io/badge/Task-Unified%20Multimodal-blue)](#)
-[![Focus](https://img.shields.io/badge/Focus-Sparse%20Activation-green)](#)
-[![Python](https://img.shields.io/badge/Python-3.10+-brightgreen)](#)
+  <img src="https://img.shields.io/badge/Task-Unified%20Multimodal-blue" alt="Task">
+  <img src="https://img.shields.io/badge/Focus-Sparse%20Activation-green" alt="Focus">
+  <img src="https://img.shields.io/badge/Python-3.10+-brightgreen" alt="Python">
 </p>
 
 
