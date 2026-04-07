@@ -1,4 +1,4 @@
-<h1 align="center">Understanding Slimness and Sparsity in Unified Multimodal Models: An Empirical Study</h1>
+<h1 align="center">Understanding and Harnessing Sparsity in Unified Multimodal Models</h1>
 
 <p align="center">
   <a href="https://arxiv.org/abs/2512.02351"><img src="https://img.shields.io/badge/arXiv-2512.02351-b31b1b" alt="arXiv"></a>
@@ -8,7 +8,7 @@
 </p>
 
 
-This repository contains the code and experiments for our work on **Efficient Unified Multimodal Modeling**, which studies redundancy and dynamic sparsity in unified models that jointly perform multimodal understanding and generation. The project analyzes how compression and adaptive computation can improve scalability and efficiency in unified multimodal architectures.
+This repository contains the code and experiments for our work on **understanding and harnessing sparsity in unified multimodal models**, which studies redundancy and dynamic sparsity in models that jointly perform multimodal understanding and generation. The project analyzes how compression and adaptive computation can improve scalability and efficiency in unified multimodal architectures.
 
 ---
 
@@ -18,7 +18,7 @@ Unified multimodal models aim to integrate understanding (e.g., reasoning, class
 While this unification brings the promise of general-purpose multimodal intelligence, it also introduces inference inefficiencies due to task-specific activation, compute imbalance, and input variability.
 Despite the recent progress, a systematic understanding of where and how these inefficiencies arise across different components remains limited.
 
-This project, Efficient-UG, conducts a comprehensive analysis of unified multimodal models using training-free pruning as a probing methodology, covering both depth pruning and width reduction.
+This project conducts a comprehensive analysis of unified multimodal models using training-free pruning as a probing methodology, covering both depth pruning and width reduction.
 Our study finds that:
 
 - The understanding components—though crucial for reasoning—can be substantially compressed in generation tasks without severe degradation.
@@ -37,8 +37,8 @@ As a result, our BAGEL model achieves comparable performance to the full model w
 ##  📦 Installation
 
 ```bash
-conda create -n effcient_ug python=3.10
-conda activate effcient_ug
+conda create -n efficient_ug python=3.10
+conda activate efficient_ug
 
 pip install -r requirements.txt
 ```
@@ -152,7 +152,8 @@ SparseUnifiedModel/
 │  
 ├── dense2sparse.ipynb # Expert partitioning and dense-to-sparse MoE preparation  
 ├── neuron_partition.py # Neuron importance and partitioning for width reduction  
-├── inference.ipynb # Example inference and pruning workflow  
+├── inference_bagel.ipynb # Example inference workflow for BAGEL  
+├── inference_qwen.ipynb # Example inference workflow for Qwen-Image  
 ├── inferencer.py # Unified inference interface  
 │  
 ├── efficient_ug.svg # Architecture overview illustration  
