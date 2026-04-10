@@ -118,6 +118,13 @@ Partitions the generation component into multiple experts to facilitate MoE adap
   dense2sparse.ipynb
 This notebook provides a practical example of converting dense modules into sparse expert-based structures for adaptive computation
 
+#### 🤗 Pretrained MoE Checkpoints
+
+| Model | Experts (Total → Active) | HuggingFace |
+|-------|--------------------------|-------------|
+| BAGEL-MoE-7B-GEN-16to8 | 16 → 8 | [LLM-Drop/BAGEL-MoE-7B-GEN-16to8](https://huggingface.co/LLM-Drop/BAGEL-MoE-7B-GEN-16to8) |
+| BAGEL-MoE-7B-GEN-32to16 | 32 → 16 | [LLM-Drop/BAGEL-MoE-7B-GEN-32to16](https://huggingface.co/LLM-Drop/BAGEL-MoE-7B-GEN-32to16) |
+
 
 ## 📂 Code Structure
 
