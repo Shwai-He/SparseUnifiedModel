@@ -35,7 +35,7 @@ As a result, our BAGEL model achieves comparable performance to the full model w
 
 ---
 
-## 🤗 Pretrained MoE Checkpoints
+## 🤗 MoE Adaptation Checkpoints
 
 | Model | Experts (Total → Active) | HuggingFace |
 |-------|--------------------------|-------------|
