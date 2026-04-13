@@ -4,335 +4,586 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Understanding and Harnessing Sparsity in Unified Multimodal Models</title>
+  <meta name="description" content="Project page for Understanding and Harnessing Sparsity in Unified Multimodal Models.">
+  <style>
+    :root {
+      --ink: #202326;
+      --muted: #5a6268;
+      --paper: #f7faf9;
+      --surface: #ffffff;
+      --line: #d9e1df;
+      --green: #0d6b5d;
+      --green-dark: #17443d;
+      --red: #c84f49;
+      --yellow: #f0c64a;
+      --shadow: 0 16px 46px rgba(32, 35, 38, 0.12);
+    }
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+Pro:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./static/css/bulma.min.css">
-  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
-  <script defer src="./static/js/fontawesome.all.min.js"></script>
-  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/954/954591.png">
+    * {
+      box-sizing: border-box;
+    }
 
+    html {
+      scroll-behavior: smooth;
+    }
 
-<style>
-  body {
-    font-family: 'Inter', sans-serif;
-    color: #333;
-    line-height: 1.7;
-  }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 17px;
+      line-height: 1.65;
+      letter-spacing: 0;
+    }
 
-  h1, h2, h3 {
-    font-family: 'Source Serif Pro', serif;
-    font-weight: 600;
-    color: #111;
-  }
+    a {
+      color: var(--green);
+      text-decoration-thickness: 1.5px;
+      text-underline-offset: 4px;
+    }
 
-  /* ✅ 调整标题字号 */
-  h1.title.is-1 {
-    font-size: 2.3rem !important; /* 原约3rem，略缩小 */
-  }
+    img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
 
-  h2.title.is-3,
-  h3.title.is-3 {
-    font-size: 1.55rem !important; /* 原约1.75rem */
-  }
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.94);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+    }
 
-  h2.title.is-3,
-  h3.title.is-3 {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
+    .nav-inner {
+      width: min(1120px, calc(100% - 36px));
+      margin: 0 auto;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
 
-  h2.title.is-3 img,
-  h3.title.is-3 img {
-    width: 34px; /* 图标稍微小一点 */
-    vertical-align: middle;
-  }
+    .brand {
+      color: var(--ink);
+      font-weight: 850;
+      text-decoration: none;
+    }
 
-  .content.has-text-justified p {
-    text-align: justify;
-    font-family: 'Source Serif Pro', serif;
-    font-size: 1.05rem;
-    color: #333;
-    line-height: 1.75;
-  }
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 16px;
+    }
 
-  figure {
-    text-align: center;
-  }
+    .nav-links a {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 750;
+      text-decoration: none;
+    }
 
-  figcaption {
-    font-size: 0.9rem;
-    color: #555;
-  }
+    .hero {
+      padding: 74px 22px 60px;
+      background:
+        linear-gradient(130deg, rgba(13, 107, 93, 0.96), rgba(32, 35, 38, 0.86)),
+        url("static/images/efficient_ug.svg");
+      background-position: center;
+      background-size: cover;
+      color: #ffffff;
+    }
 
-  section.section {
-    padding-top: 3rem;
-    padding-bottom: 3rem;
-  }
+    .hero-wrap {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(340px, 0.98fr);
+      gap: 34px;
+      align-items: center;
+    }
 
-  .navbar {
-    border-bottom: 1px solid #e6e6e6;
-  }
-</style>
+    .venue {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 11px;
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.14);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    h1 {
+      margin: 20px 0 0;
+      font-size: 54px;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .positioning {
+      margin: 24px 0 0;
+      max-width: 760px;
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 20px;
+    }
+
+    .authors,
+    .affiliations {
+      margin: 18px 0 0;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+    }
+
+    .authors a {
+      color: #ffffff;
+      font-weight: 750;
+    }
+
+    .hero-actions,
+    .resource-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 9px 15px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: #ffffff;
+      color: var(--ink);
+      font-weight: 850;
+      text-decoration: none;
+    }
+
+    .button.secondary {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.42);
+    }
+
+    .hero-figure {
+      margin: 0;
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-figure img {
+      width: 100%;
+      padding: 18px;
+      background: #ffffff;
+    }
+
+    .hero-figure figcaption {
+      padding: 13px 16px 15px;
+      color: var(--muted);
+      background: #ffffff;
+      font-size: 14px;
+    }
+
+    section {
+      padding: 68px 22px;
+    }
+
+    .wrap {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+    }
+
+    .narrow {
+      width: min(860px, 100%);
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--red);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0 0 18px;
+      font-size: 40px;
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 20px;
+    }
+
+    .claim-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 32px;
+    }
+
+    .claim {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 10px 26px rgba(32, 35, 38, 0.06);
+    }
+
+    .claim strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--green);
+      font-size: 18px;
+    }
+
+    .band {
+      background: #ffffff;
+      border-block: 1px solid var(--line);
+    }
+
+    .figure-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 32px;
+      align-items: start;
+    }
+
+    figure.panel {
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    figure.panel img {
+      width: 100%;
+      padding: 18px;
+      background: #ffffff;
+    }
+
+    figure.panel.compact img {
+      width: min(72%, 520px);
+      margin: 0 auto;
+      padding: 18px 18px 8px;
+    }
+
+    figcaption {
+      padding: 0 18px 18px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .method {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      margin-top: 32px;
+    }
+
+    .method-step {
+      padding: 24px;
+      border-left: 5px solid var(--green);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 10px 26px rgba(32, 35, 38, 0.06);
+    }
+
+    .checkpoints {
+      width: 100%;
+      margin-top: 28px;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 10px 26px rgba(32, 35, 38, 0.06);
+    }
+
+    .checkpoints th,
+    .checkpoints td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .checkpoints th {
+      background: var(--green-dark);
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    .citation {
+      background: #26332f;
+      color: #ffffff;
+    }
+
+    .citation .lead,
+    .citation .eyebrow {
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    pre {
+      margin: 28px 0 0;
+      padding: 20px;
+      overflow-x: auto;
+      border-radius: 8px;
+      background: #101815;
+      color: #f7fbf8;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    footer {
+      padding: 28px 22px;
+      background: #ffffff;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    footer .wrap {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .nav-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 12px 0;
+      }
+
+      .nav-links {
+        justify-content: flex-start;
+      }
+
+      .hero-wrap,
+      .claim-grid,
+      .figure-grid,
+      .method {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 38px;
+      }
+
+      h2 {
+        font-size: 30px;
+      }
+
+      .positioning,
+      .lead {
+        font-size: 18px;
+      }
+
+      section {
+        padding: 54px 18px;
+      }
+    }
+  </style>
 </head>
-
 <body>
-
-<!-- ====================== Navbar ====================== -->
-<nav class="navbar" role="navigation" aria-label="main navigation">
-  <div class="navbar-brand">
-    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-    </a>
-  </div>
-  <div class="navbar-menu">
-    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
-      <a class="navbar-item" href="https://shwai-he.github.io/">
-        <span class="icon"><i class="fas fa-home"></i></span>
-      </a>
-    </div>
-  </div>
-</nav>
-
-<!-- ====================== Hero ====================== -->
-<section class="hero">
-  <div class="hero-body">
-    <div class="container is-max-desktop has-text-centered">
-      <h1 class="title is-1 publication-title">
-        Understanding and Harnessing Sparsity in Unified Multimodal Models
-      </h1>
-
-      <div class="is-size-5 publication-authors">
-        <span class="author-block"><a href="https://shwai-he.github.io/">Shwai He</a><sup>1,2</sup>,</span>
-        <span class="author-block"><a href="https://v3alab.github.io/author/chaorui-deng/">Chaorui Deng</a><sup>1</sup>,</span>
-        <span class="author-block"><a href="https://www.ang-li.com/">Ang Li</a><sup>2</sup>,</span>
-        <span class="author-block"><a href="https://shenyann.github.io/">Shen Yan</a><sup>1,†</sup></span>
-      </div>
-
-      <div class="is-size-5 mt-2">
-        <span class="author-block"><sup>1</sup>ByteDance Seed,</span>
-        <span class="author-block"><sup>2</sup>University of Maryland, College Park</span>
-      </div>
-
-      <div class="publication-links mt-4">
-        <a href="https://arxiv.org/abs/2512.02351" class="button is-dark is-rounded">
-          <span class="icon"><i class="fas fa-file-pdf"></i></span><span>Paper</span>
-        </a>
-        <a href="https://github.com/Shwai-He/SparseUnifiedModel" class="button is-dark is-rounded">
-          <span class="icon"><i class="fab fa-github"></i></span><span>Code</span>
-        </a>
+  <nav class="nav" aria-label="Primary">
+    <div class="nav-inner">
+      <a class="brand" href="#">SparseUnifiedModel</a>
+      <div class="nav-links">
+        <a href="#motivation">Motivation</a>
+        <a href="#evidence">Evidence</a>
+        <a href="#adaptation">MoE Adaptation</a>
+        <a href="#checkpoints">Checkpoints</a>
+        <a href="#citation">Citation</a>
       </div>
     </div>
-  </div>
-</section>
+  </nav>
 
-<!-- ====================== Abstract ====================== -->
-<section class="section">
-  <div class="container is-max-desktop">
-    <h2 class="title is-3">
-      <img src="https://cdn-icons-png.flaticon.com/512/1042/1042339.png">
-      <span>Abstract</span>
-    </h2>
-
-    <div class="content has-text-justified">
-      <p>
-        Large-scale multimodal models have achieved remarkable progress in both understanding and generation. Traditionally, these tasks were studied in isolation, resulting in distinct architectures. Recent efforts instead pursue unified multimodal models that integrate heterogeneous components to support both capabilities within a single framework. However, such unification introduces inference inefficiencies arising from <i>task-specific activation</i>, <i>compute imbalance</i>, and <i>input variability</i>. Yet, a systematic understanding of how these inefficiencies manifest across different components remains limited. In this work, we conduct a systematic analysis of unified multimodal model components using training-free pruning as a probing methodology, considering both depth pruning and width reduction. Our study reveals that the understanding component, while essential for multimodal reasoning, exhibits notable compressibility in generation tasks. In contrast, the generation components are highly sensitive to compression, with performance deteriorating sharply even under moderate pruning ratios. To address this limitation, we propose a Mixture-of-Experts (MoE) Adaptation, inspired by dynamic activation patterns observed across different samples. This approach partitions the generation module into multiple experts and enables sparse activation to restore generation quality. We validate the effectiveness of sparse activation through expert-frozen tuning and further show that a fully trainable adaptation delivers additional gains. As a result, the adapted BAGEL model achieves performance comparable to the full model while activating only about half of its parameters.
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- ====================== Overview ====================== -->
-<section class="section">
-  <div class="container is-max-desktop">
-    <h2 class="title is-3">
-      <img src="https://cdn-icons-png.flaticon.com/512/5379/5379860.png">
-      <span>SparseUnifiedModel: Toward Efficient Unified Multimodal Architectures</span>
-    </h2>
-
-    <div class="content has-text-justified">
-      <p>
-        <b>SparseUnifiedModel</b> integrates pre-trained multimodal backbones (<a href="https://github.com/ByteDance-Seed/Bagel">BAGEL</a>, <a href="https://github.com/inclusionAI/Ming/tree/main">Ming-Omni</a>, <a href="https://github.com/QwenLM/Qwen-Image">Qwen-Image</a>) into a unified framework for both <i>understanding</i> and <i>generation</i>. It leverages sparse activation, modular adaptation, and component-level analysis to uncover redundancy and improve computational efficiency across heterogeneous modalities. We consider a two-stage efficiency optimization procedure:
-      </p>
-      <ul>
-        <li><b>Training-Free Component Analysis.</b> Using depth and width pruning as probing tools, we systematically identify compressible submodules, revealing distinct sensitivities across understanding and generation components.</li>
-        <li><b>Sparse Adaptation via MoE Integration.</b> Inspired by dynamic activation patterns across tasks, we introduce a <b>Mixture-of-Experts (MoE)</b> adaptation that enables selective activation in generation modules, achieving high-quality generation with reduced computational cost.</li>
-      </ul>
-    </div>
-
-    <div class="has-text-centered">
-      <figure>
-      <img src="static/images/efficient_ug.svg" width="80%">
-      <figcaption>
-        Overview of the proposed techniques for slimming and sparsifying unified multimodal models.
-      </figcaption>
-    </figure>
-    </div>
-
-
-
-  </div>
-</section>
-
-
-<!-- ====================== Und Results ====================== -->
-<section class="section">
-  <div class="container is-max-desktop">
-    <h2 class="title is-3">
-      <img src="static/images/light.png">
-      <span>Understanding Component Demonstrates Compressibility</span>
-    </h2>
-
-    <!-- ========== Single Full-Width Figure (Top Row) ========== -->
-    <div class="has-text-centered">
-      <figure><img src="static/images/depth_reduction.svg" width="45%">
-        <figcaption class="is-size-7" style="margin-top:0.3rem; margin-bottom:1.2rem;">
-          Depth pruning under generation tasks.
-        </figcaption></figure>
-    </div>
-
-
-    <!-- ========== Two Tables Side-by-Side ========== -->
-    <figure class="content has-text-centered" style="max-width: 75%; margin: 0 auto;">
-
-      <div class="columns is-centered is-vcentered is-mobile">
-        <!-- Left -->
-        <div class="column" style="padding-right: 0.3rem;">
-          <img src="static/images/compress_und_und_task.png" style="width:100%; height:auto;">
-        </div>
-    
-        <!-- Right -->
-        <div class="column" style="padding-left: 0.3rem;">
-          <img src="static/images/compress_und_gen_task.png" style="width:100%; height:auto;">
+  <header class="hero">
+    <div class="hero-wrap">
+      <div>
+        <div class="venue">arXiv 2025</div>
+        <h1>Understanding and Harnessing Sparsity in Unified Multimodal Models</h1>
+        <p class="positioning">A component-level study of where unified multimodal models can be compressed, why generation modules are harder to prune, and how sparse MoE adaptation recovers generation quality.</p>
+        <p class="authors">
+          <a href="https://shwai-he.github.io/">Shwai He</a><sup>1,2</sup>,
+          <a href="https://v3alab.github.io/author/chaorui-deng/">Chaorui Deng</a><sup>1</sup>,
+          <a href="https://www.ang-li.com/">Ang Li</a><sup>2</sup>,
+          <a href="https://shenyann.github.io/">Shen Yan</a><sup>1,&dagger;</sup>
+        </p>
+        <p class="affiliations"><sup>1</sup>ByteDance Seed, <sup>2</sup>University of Maryland, College Park</p>
+        <div class="hero-actions">
+          <a class="button" href="https://arxiv.org/abs/2512.02351">Paper</a>
+          <a class="button secondary" href="https://github.com/Shwai-He/SparseUnifiedModel">Code</a>
+          <a class="button secondary" href="#checkpoints">Models</a>
         </div>
       </div>
-  
-      <figcaption class="is-size-7" style="margin-top:0.1rem; margin-bottom:1.2rem;">
-        Width reduction on understanding and generation tasks.
-      </figcaption>
-  
-    </figure>
-
-    <div class="content has-text-justified" style="max-width:85%; margin: 1rem auto 0;">
-      <p>
-        The understanding component exhibits higher overall compressibility and can tolerate even larger pruning ratios under generation tasks, highlighting the disparity in redundancy across different task types.
-      </p>
+      <figure class="hero-figure">
+        <img src="static/images/efficient_ug.svg" alt="SparseUnifiedModel overview">
+        <figcaption>Two-stage efficiency optimization: training-free component analysis followed by sparse MoE adaptation.</figcaption>
+      </figure>
     </div>
+  </header>
 
-  </div>
-</section>
-
-
-<!-- ====================== Dilemma ====================== -->
-<section class="section">
-  <div class="container is-max-desktop">
-    <h3 class="title is-3">
-      <img src="static/images/forbidden.png">
-      <span>Dilemma of Compressing Generation Component</span>
-    </h3>
-
-    <div class="has-text-centered">
-      <img src="static/images/dilemma_compress_gen.png" width="70%">
-      <figcaption class="is-size-7" style="margin-top:0.5rem; margin-bottom:1.2rem;">
-        The compression dilemma in generation components.
-      </figcaption>
-    </div>
-
-    <div class="content has-text-justified" style="max-width:85%;margin:0 auto;">
-      <p>
-      <b>Generation modules</b> present a fundamental <b>compression dilemma</b>. These components are tightly coupled with output fidelity, where even moderate pruning ratios can lead to severe degradation in text or image quality.      
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- ====================== Pretrained Checkpoints ====================== -->
-<section class="section">
-  <div class="container is-max-desktop">
-    <h2 class="title is-3">
-      <img src="https://cdn-icons-png.flaticon.com/512/2103/2103633.png">
-      <span>MoE Adaptation Checkpoints</span>
-    </h2>
-
-    <div class="content">
-      <table class="table is-bordered is-striped is-hoverable is-fullwidth" style="font-size:0.95rem;">
-        <thead>
-          <tr>
-            <th>Model</th>
-            <th>Experts (Total → Active)</th>
-            <th>HuggingFace</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>BAGEL-MoE-7B-GEN-16to8</td>
-            <td>16 → 8</td>
-            <td><a href="https://huggingface.co/LLM-Drop/BAGEL-MoE-7B-GEN-16to8" target="_blank">LLM-Drop/BAGEL-MoE-7B-GEN-16to8</a></td>
-          </tr>
-          <tr>
-            <td>BAGEL-MoE-7B-GEN-32to16</td>
-            <td>32 → 16</td>
-            <td><a href="https://huggingface.co/LLM-Drop/BAGEL-MoE-7B-GEN-32to16" target="_blank">LLM-Drop/BAGEL-MoE-7B-GEN-32to16</a></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<!-- ====================== MoE Adaptation ====================== -->
-<section class="section">
-  <div class="container is-max-desktop">
-    <h3 class="title is-3">
-      <img src="https://cdn-icons-png.flaticon.com/512/5886/5886212.png">
-      <span>Dynamic Activation-Driven MoE Adaptation</span>
-    </h3>
-
-    <div class="has-text-centered">
-      <figure><img src="static/images/zeros_ones_ratio_hatch.svg" width="70%">
-        <figcaption class="is-size-7" style="margin-top:0.5rem; margin-bottom:1.2rem;">
-          Activation sparsity patterns across layers.
-        </figcaption></figure>
-      <div class="content has-text-justified" style="max-width:85%;margin:0 auto;">
-      <p>
-        Visualization of activation distributions shows an increasing ratio of saturated and inactive neurons (<i>zeros</i>) in higher layers. The activation ratio further reveals that persistently active and inactive neurons together account for far less than the 50% compression ratio, highlighting strong sample-dependent dynamics in activation patterns.      
-      </p>
+  <main>
+    <section id="motivation">
+      <div class="wrap">
+        <p class="eyebrow">Motivation</p>
+        <h2>Unified multimodal models do not have uniform redundancy.</h2>
+        <p class="lead">Understanding and generation share one system but stress different components. We use training-free pruning as a probe to reveal which components are compressible, which are fragile, and where sparse activation can help.</p>
+        <div class="claim-grid">
+          <div class="claim">
+            <strong>Component sensitivity</strong>
+            Understanding modules show notable compressibility across task regimes, especially in generation tasks, while generation modules are more tightly coupled to output fidelity.
+          </div>
+          <div class="claim">
+            <strong>Task-dependent sparsity</strong>
+            Activation patterns vary across samples and tasks, so static pruning alone can miss useful dynamic structure.
+          </div>
+          <div class="claim">
+            <strong>Adaptation target</strong>
+            MoE adaptation turns observed dynamic activation into sparse routing for the generation module.
+          </div>
+        </div>
       </div>
+    </section>
+
+    <section id="evidence" class="band">
+      <div class="wrap">
+        <p class="eyebrow">Evidence</p>
+        <h2>Pruning exposes an asymmetric compression landscape.</h2>
+        <p class="lead">Depth and width reduction show that unified models are not uniformly compressible across understanding and generation components.</p>
+        <div class="figure-grid">
+          <figure class="panel compact">
+            <img src="static/images/depth_reduction.svg" alt="Depth pruning results under generation tasks">
+            <figcaption>Depth pruning indicates that understanding components can tolerate larger reduction in generation tasks.</figcaption>
+          </figure>
+          <figure class="panel">
+            <img src="static/images/compress_und_gen_task.png" alt="Width reduction for understanding components under generation tasks">
+            <figcaption>Width reduction further reveals compressibility in understanding components when evaluated under generation workloads.</figcaption>
+          </figure>
+          <figure class="panel">
+            <img src="static/images/compress_und_und_task.png" alt="Width reduction for understanding components under understanding tasks">
+            <figcaption>Comparing task regimes helps separate generally redundant capacity from task-specific sensitivity.</figcaption>
+          </figure>
+          <figure class="panel compact">
+            <img src="static/images/dilemma_compress_gen.png" alt="Dilemma of compressing generation components">
+            <figcaption>Generation components are more fragile: moderate compression can cause visible quality degradation.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="adaptation">
+      <div class="wrap">
+        <p class="eyebrow">Method</p>
+        <h2>Dynamic sparsity motivates MoE adaptation.</h2>
+        <p class="lead">Training-free analysis identifies static redundancy; sparse MoE adaptation uses sample-dependent activation to recover generation quality with fewer active parameters.</p>
+        <div class="method">
+          <div class="method-step">
+            <h3>Training-Free Component Analysis</h3>
+            <p>Depth pruning and width reduction probe how much each component can be compressed across understanding and generation regimes.</p>
+          </div>
+          <div class="method-step">
+            <h3>Sparse MoE Adaptation</h3>
+            <p>The generation module is partitioned into experts and sparsely activated, enabling dynamic routing while preserving generation quality.</p>
+          </div>
+        </div>
+        <div class="figure-grid">
+          <figure class="panel compact">
+            <img src="static/images/zeros_ones_ratio_hatch.svg" alt="Activation sparsity patterns across layers">
+            <figcaption>Activation statistics reveal sample-dependent sparsity patterns that motivate expert partitioning.</figcaption>
+          </figure>
+          <figure class="panel compact">
+            <img src="static/images/comprison_gen.png" alt="Comparison between slimness and sparse adaptation">
+            <figcaption>MoE-based sparse adaptation restores generation quality beyond training-free slimming alone.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section id="checkpoints" class="band">
+      <div class="narrow">
+        <p class="eyebrow">Resources</p>
+        <h2>MoE adaptation checkpoints are available on Hugging Face.</h2>
+        <p class="lead">The released checkpoints activate half of the generation experts at inference time.</p>
+        <table class="checkpoints">
+          <thead>
+            <tr>
+              <th>Model</th>
+              <th>Experts</th>
+              <th>Hugging Face</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>BAGEL-MoE-7B-GEN-16to8</td>
+              <td>16 total, 8 active</td>
+              <td><a href="https://huggingface.co/LLM-Drop/BAGEL-MoE-7B-GEN-16to8">LLM-Drop/BAGEL-MoE-7B-GEN-16to8</a></td>
+            </tr>
+            <tr>
+              <td>BAGEL-MoE-7B-GEN-32to16</td>
+              <td>32 total, 16 active</td>
+              <td><a href="https://huggingface.co/LLM-Drop/BAGEL-MoE-7B-GEN-32to16">LLM-Drop/BAGEL-MoE-7B-GEN-32to16</a></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="resource-actions">
+          <a class="button" href="https://github.com/Shwai-He/SparseUnifiedModel">Code Repository</a>
+          <a class="button" href="https://arxiv.org/abs/2512.02351">Paper</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="citation" class="citation">
+      <div class="narrow">
+        <p class="eyebrow">Citation</p>
+        <h2>Cite this work.</h2>
+        <p class="lead">If this project helps your research, please cite the paper.</p>
+        <pre><code>@misc{he2025understandingharnessingsparsityunified,
+  title={Understanding and Harnessing Sparsity in Unified Multimodal Models},
+  author={Shwai He and Chaorui Deng and Ang Li and Shen Yan},
+  year={2025},
+  eprint={2512.02351},
+  archivePrefix={arXiv},
+  primaryClass={cs.CV},
+  url={https://arxiv.org/abs/2512.02351},
+}</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>This project page builds on the Nerfies website template.</span>
+      <span>Released resources are intended for research use and remain subject to the licenses of the underlying models and datasets.</span>
     </div>
-
-    <div class="has-text-centered">
-      <figure class="mt-5"><img src="static/images/comprison_gen.png" width="70%">
-        <figcaption class="is-size-7" style="margin-top:0.5rem; margin-bottom:1.2rem;">
-          Overall comparison between training-free slimness and training-aware sparsity.
-        </figcaption></figure>
-      <div class="content has-text-justified" style="max-width:85%;margin:0 auto;">
-      <p>
-        Training-free analysis identifies naturally compressible regions within the model, providing insights into static redundancy patterns. In contrast, MoE-based sparse adaptation further refines these activation patterns through dynamic, sample-dependent routing, effectively restoring generation quality while minimizing computation cost.
-      </p>
-      </div>    
-      <!-- <p class="is-size-6 mt-3">Training-free analysis identifies naturally compressible regions, while MoE-based sparse adaptation further refines activation patterns to restore generation quality with minimal computation.</p> -->
-    <!-- </div> -->
-    </div>
-</section>
-
-<section class="section" id="Acknowledgement">
-    <div class="container is-max-desktop content">
-      <h2 class="title">Acknowledgement</h2>
-      <p>
-        This project page is based on the <a
-        href="https://github.com/nerfies/nerfies.github.io">Nerfies website template</a>, licensed under the <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
-        Commons Attribution-ShareAlike 4.0 International License</a>.
-      </p>
-
-      <p>
-<b>Usage and License Notices</b>: The data, code, and checkpoints released with this project are intended for research use only and remain subject to the licenses of the underlying models and datasets referenced by this work.
-</p>
-    </div>
-  </section>
-
-
+  </footer>
 </body>
 </html>
