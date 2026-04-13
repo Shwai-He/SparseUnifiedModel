@@ -90,11 +90,7 @@
 
     .hero {
       padding: 74px 22px 60px;
-      background:
-        linear-gradient(130deg, rgba(13, 107, 93, 0.96), rgba(32, 35, 38, 0.86)),
-        url("static/images/efficient_ug.svg");
-      background-position: center;
-      background-size: cover;
+      background: linear-gradient(130deg, #0d6b5d 0%, #17443d 52%, #202326 100%);
       color: #ffffff;
     }
 
@@ -272,6 +268,19 @@
       align-items: start;
     }
 
+    .evidence-layout {
+      display: grid;
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .table-pair {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      align-items: stretch;
+    }
+
     figure.panel {
       margin: 0;
       border: 1px solid var(--line);
@@ -283,14 +292,27 @@
 
     figure.panel img {
       width: 100%;
+      max-height: 560px;
+      object-fit: contain;
       padding: 18px;
       background: #ffffff;
     }
 
     figure.panel.compact img {
-      width: min(72%, 520px);
+      width: min(76%, 560px);
       margin: 0 auto;
       padding: 18px 18px 8px;
+    }
+
+    figure.panel.wide {
+      width: min(880px, 100%);
+      margin-inline: auto;
+    }
+
+    figure.panel.wide img {
+      width: min(82%, 680px);
+      margin: 0 auto;
+      padding-bottom: 8px;
     }
 
     figcaption {
@@ -388,6 +410,7 @@
       .hero-wrap,
       .claim-grid,
       .figure-grid,
+      .table-pair,
       .method {
         grid-template-columns: 1fr;
       }
@@ -479,20 +502,22 @@
         <p class="eyebrow">Evidence</p>
         <h2>Pruning exposes an asymmetric compression landscape.</h2>
         <p class="lead">Depth and width reduction show that unified models are not uniformly compressible across understanding and generation components.</p>
-        <div class="figure-grid">
-          <figure class="panel compact">
+        <div class="evidence-layout">
+          <figure class="panel wide">
             <img src="static/images/depth_reduction.svg" alt="Depth pruning results under generation tasks">
             <figcaption>Depth pruning indicates that understanding components can tolerate larger reduction in generation tasks.</figcaption>
           </figure>
-          <figure class="panel">
-            <img src="static/images/compress_und_gen_task.png" alt="Width reduction for understanding components under generation tasks">
-            <figcaption>Width reduction further reveals compressibility in understanding components when evaluated under generation workloads.</figcaption>
-          </figure>
-          <figure class="panel">
-            <img src="static/images/compress_und_und_task.png" alt="Width reduction for understanding components under understanding tasks">
-            <figcaption>Comparing task regimes helps separate generally redundant capacity from task-specific sensitivity.</figcaption>
-          </figure>
-          <figure class="panel compact">
+          <div class="table-pair">
+            <figure class="panel">
+              <img src="static/images/compress_und_und_task.png" alt="Width reduction for understanding components under understanding tasks">
+              <figcaption>Understanding-task evaluation separates generally redundant capacity from task-specific sensitivity.</figcaption>
+            </figure>
+            <figure class="panel">
+              <img src="static/images/compress_und_gen_task.png" alt="Width reduction for understanding components under generation tasks">
+              <figcaption>Generation-task evaluation further reveals compressibility in understanding components.</figcaption>
+            </figure>
+          </div>
+          <figure class="panel wide">
             <img src="static/images/dilemma_compress_gen.png" alt="Dilemma of compressing generation components">
             <figcaption>Generation components are more fragile: moderate compression can cause visible quality degradation.</figcaption>
           </figure>
