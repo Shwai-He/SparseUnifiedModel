@@ -22,6 +22,7 @@ from torch.nn.functional import scaled_dot_product_attention
 from transformers.utils import ModelOutput
 
 from flash_attn import flash_attn_varlen_func
+from modeling.compression_mixin import LayerCompressionMixin
 from modeling.qwen2.modeling_qwen2 import (
     Qwen2Attention, 
     Qwen2MLP, 
@@ -707,7 +708,7 @@ class PackedAttentionMoT(Qwen2Attention):
         return packed_attn_output, past_key_values
 
 
-class Qwen2MoTDecoderLayer(nn.Module):
+class Qwen2MoTDecoderLayer(LayerCompressionMixin, nn.Module):
     def __init__(
         self, 
         config, 
@@ -766,12 +767,7 @@ class Qwen2MoTDecoderLayer(nn.Module):
         self.post_attention_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm_moe_gen = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-        self.record = False
-        self.skip_type = None
-        self.skip_mode = None
-        self.input = None
-        self.residual = None
-        self.output = None
+        self._init_compression()
 
     def convert_dense_to_sparse_moe_dual(
             self, 
@@ -952,8 +948,7 @@ class Qwen2MoTDecoderLayer(nn.Module):
 
         residual = packed_query_sequence
         # print(f"record: {self.record} | mode: {self.skip_mode} | residual: {residual}" )
-        if self.record and mode == self.skip_mode: ## bsz = 1
-            self.input = torch.cat((self.input, residual), dim=0) if self.input is not None else residual
+        self._record_input(residual, mode)
 
         self.self_attn.packed_text_indexes = packed_text_indexes
         self.self_attn.packed_vae_token_indexes = packed_vae_token_indexes
@@ -968,10 +963,10 @@ class Qwen2MoTDecoderLayer(nn.Module):
 
         # print(f"{self.layer_idx} mode: {mode} | skip_mode: {self.skip_mode}")
 
-        if self.skip_type in ["block", "attn"] and self.skip_mode == mode:
+        if self._should_skip_attn(mode):
             pass
 
-        else: 
+        else:
             if mode == "und":
                 packed_query_sequence = self.input_layernorm(packed_query_sequence)
             elif mode == "gen":
@@ -1003,8 +998,7 @@ class Qwen2MoTDecoderLayer(nn.Module):
 
         # Fully Connected
         residual = packed_query_sequence
-        if self.record and mode == self.skip_mode: ## bsz = 1
-            self.residual = torch.cat((self.residual, residual), dim=0) if self.residual is not None else residual
+        self._record_residual(residual, mode)
 
         routing_logits = None
         if mode == "und":
@@ -1029,12 +1023,11 @@ class Qwen2MoTDecoderLayer(nn.Module):
                 # print(f"routing_logits_und: {routing_logits_und.shape}")
                 routing_logits = torch.cat((routing_logits_und, routing_logits_gen), dim=0)
                 
-        if self.record and mode == self.skip_mode: ## bsz = 1
-            self.output = torch.cat((self.output, packed_query_sequence), dim=0) if self.output is not None else packed_query_sequence
+        self._record_output(packed_query_sequence, mode)
 
-        if self.skip_type in ["block", "mlp"] and mode == self.skip_mode:
+        if self._should_skip_mlp(mode):
             packed_query_sequence = residual
-        else: 
+        else:
             packed_query_sequence = residual + packed_query_sequence
 
         return packed_query_sequence, past_key_values, routing_logits

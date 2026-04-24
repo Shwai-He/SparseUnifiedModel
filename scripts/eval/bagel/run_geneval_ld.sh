@@ -12,7 +12,7 @@ model_path="your_model_path"
 keep_ratio=0.5
 calibration_samples=1
 sparse_mode=prune # random prune
-drop_type=block # block attn mlp
+drop_type=block   # block attn mlp
 seed=42
 skip_mode=und
 
@@ -29,7 +29,8 @@ torchrun \
     --nproc_per_node=$GPUS \
     --master_addr=127.0.0.1 \
     --master_port=$port \
-    ./eval/gen/gen_images_mp_ld.py \
+    ./eval/gen/gen_images_ld.py \
+    --model_type bagel \
     --output_dir $OUTPUT_DIR/images_continous \
     --metadata_file ./eval/gen/geneval/prompts/evaluation_metadata_long.jsonl \
     --batch_size 1 \
@@ -43,7 +44,6 @@ torchrun \
     --seed $seed \
     --drop_type $drop_type \
     --skip_mode $skip_mode \
-
 
 # calculate score
 torchrun \

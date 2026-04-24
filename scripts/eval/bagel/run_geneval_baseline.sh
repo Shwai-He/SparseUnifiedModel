@@ -23,7 +23,8 @@ torchrun \
     --nproc_per_node=$GPUS \
     --master_addr=127.0.0.1 \
     --master_port=$port \
-    ./eval/gen/gen_images_mp.py \
+    ./eval/gen/gen_images.py \
+    --model_type bagel \
     --output_dir $OUTPUT_DIR/images \
     --metadata_file ./eval/gen/geneval/prompts/evaluation_metadata_long.jsonl \
     --batch_size 1 \
@@ -32,7 +33,6 @@ torchrun \
     --max_latent_size 64 \
     --model-path $model_path \
 
-exit 0
 # calculate score
 torchrun \
     --nnodes=1 \

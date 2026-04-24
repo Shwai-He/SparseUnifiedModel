@@ -30,7 +30,8 @@ torchrun \
     --nproc_per_node=$GPUS \
     --master_addr=127.0.0.1 \
     --master_port=$port \
-    ./gen_images_mp_ming.py \
+    ./eval/gen/gen_images.py \
+    --model_type ming \
     --output_dir $OUTPUT_DIR/images \
     --metadata_file $metadata_file \
     --batch_size 1 \
@@ -44,7 +45,6 @@ torchrun \
     --compressed_layers_gen $compressed_layers_gen \
     --sparse_mode $sparse_mode \
     --seed $seed \
-    --strategy $strategy \
 
 # calculate score
 torchrun \
@@ -60,4 +60,3 @@ torchrun \
 
 # summarize score
 python ./eval/gen/geneval/evaluation/summary_scores.py $OUTPUT_DIR/results.jsonl
-

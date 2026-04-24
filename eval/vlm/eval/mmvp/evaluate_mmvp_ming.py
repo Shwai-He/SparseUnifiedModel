@@ -21,7 +21,7 @@ from PIL import Image
 from tqdm import tqdm
 
 from transformers import AutoProcessor, GenerationConfig
-from modeling_bailingmm import BailingMMNativeForConditionalGeneration
+from modeling.ming.modeling_bailingmm import BailingMMNativeForConditionalGeneration
 
 
 ds_collections = {

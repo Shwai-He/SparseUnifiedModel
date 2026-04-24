@@ -13,13 +13,8 @@ metadata_file=./eval/gen/geneval/prompts/evaluation_metadata_long.jsonl
 keep_ratio=0.5
 calibration_samples=1
 sparse_mode=prune # prune random
-drop_type=block # block attn mlp
+drop_type=block   # block attn mlp
 seed=42
-
-
-port=16358
-
-cd Ming
 
 label=${sparse_mode}/${drop_type}/${keep_ratio}/${calibration_samples}/seed${seed}
 OUTPUT_DIR=$model_path/geneval/depth/${label}
@@ -33,7 +28,8 @@ torchrun \
     --nproc_per_node=$GPUS \
     --master_addr=127.0.0.1 \
     --master_port=$port \
-    ./gen_images_mp_ming_ld.py \
+    ./eval/gen/gen_images_ld.py \
+    --model_type ming \
     --output_dir $OUTPUT_DIR/images \
     --metadata_file $metadata_file \
     --batch_size 1 \
@@ -61,7 +57,3 @@ torchrun \
 
 # summarize score
 python ./eval/gen/geneval/evaluation/summary_scores.py $OUTPUT_DIR/results.jsonl
-
-
-
-
