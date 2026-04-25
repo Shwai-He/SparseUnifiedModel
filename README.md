@@ -87,7 +87,8 @@ bash scripts/eval/qwen/run_geneval_ld.sh
 
 **Understanding:**
 ```bash
-bash eval/vlm/evaluate_ld.sh
+bash scripts/eval/bagel/run_vlm_ld.sh
+bash scripts/eval/ming/run_vlm_ld.sh
 ```
 
 ---
@@ -105,7 +106,8 @@ bash scripts/eval/qwen/run_geneval_wr.sh
 
 **Understanding:**
 ```bash
-bash eval/vlm/evaluate.sh
+bash scripts/eval/bagel/run_vlm_wr.sh
+bash scripts/eval/ming/run_vlm_wr.sh
 ```
 
 **Neuron partitioning script:**
