@@ -162,7 +162,7 @@
 
   <!-- Toast Notification -->
   <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-    <div class="bg-slate-900/95 border border-brand-400 text-white px-5 py-3 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-3">
+    <div class="bg-white border border-brand-400 text-slate-800 px-5 py-3 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-3">
       <i class="fa-solid fa-circle-check text-brand-400 text-lg"></i>
       <span id="toast-message" class="text-sm font-medium">Copied to clipboard!</span>
     </div>
@@ -420,7 +420,7 @@
           </div>
 
           <!-- Sparsity Ratio Slider -->
-          <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+          <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
             <div class="flex justify-between items-center">
               <label class="text-xs font-bold uppercase tracking-wider text-slate-300">3. Sparsity / Pruning Ratio</label>
               <span id="sparsity-display" class="font-mono text-lg font-bold text-brand-400">50%</span>
@@ -452,25 +452,25 @@
           
           <!-- Real-time Metric Cards Grid -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl text-center">
+            <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center">
               <span class="text-xs font-medium text-slate-600 block mb-1">Active Compute</span>
               <span id="metric-params" class="font-mono font-bold text-xl text-white">3.5B</span>
               <span class="text-xs text-slate-500 block mt-0.5">from 7.0B dense</span>
             </div>
 
-            <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl text-center">
+            <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center">
               <span class="text-xs font-medium text-slate-600 block mb-1">GenEval Score</span>
               <span id="metric-geneval" class="font-mono font-bold text-xl text-brand-400">0.648</span>
               <span id="metric-geneval-diff" class="text-xs text-brand-300 block mt-0.5">-0.6% relative</span>
             </div>
 
-            <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl text-center">
+            <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center">
               <span class="text-xs font-medium text-slate-600 block mb-1">MME Score</span>
               <span id="metric-mme" class="font-mono font-bold text-xl text-accent-cyan">1885</span>
               <span id="metric-mme-diff" class="text-xs text-cyan-400 block mt-0.5">-2.9% relative</span>
             </div>
 
-            <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl text-center">
+            <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-center">
               <span class="text-xs font-medium text-slate-600 block mb-1">Quality Retention</span>
               <span id="metric-retention" class="font-mono font-bold text-xl text-emerald-400">99.4%</span>
               <span class="text-xs text-emerald-500 block mt-0.5">near baseline</span>
@@ -478,7 +478,7 @@
           </div>
 
           <!-- Chart.js Canvas Box -->
-          <div class="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl space-y-3">
+          <div class="bg-slate-50 border border-slate-200 p-5 rounded-2xl space-y-3">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                 <i class="fa-solid fa-chart-line text-brand-400"></i> Multimodal Performance Retention Curve
@@ -605,7 +605,7 @@
 
       <!-- Table 1: Generation Benchmarks -->
       <div class="glass-panel rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
-        <div class="px-6 py-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+        <div class="px-6 py-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
           <span class="font-display font-bold text-base text-white flex items-center gap-2">
             <i class="fa-solid fa-wand-magic-sparkles text-brand-400"></i> Visual Generation Benchmarks (BAGEL-7B & MoE Variants)
           </span>
@@ -699,7 +699,7 @@
 
       <!-- Table 2: Understanding Benchmarks -->
       <div class="glass-panel rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
-        <div class="px-6 py-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+        <div class="px-6 py-4 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
           <span class="font-display font-bold text-base text-white flex items-center gap-2">
             <i class="fa-solid fa-eye text-accent-cyan"></i> Visual Understanding Benchmarks (MME, MMBench, POPE, TextVQA)
           </span>
@@ -848,7 +848,7 @@
               <i class="fa-regular fa-copy"></i> <span>Copy Code</span>
             </button>
           </div>
-          <pre class="bg-slate-950 p-5 rounded-2xl border border-slate-800 text-xs sm:text-sm font-mono text-emerald-300 overflow-x-auto leading-relaxed"><code id="code-inf">import torch
+          <pre class="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-xs sm:text-sm font-mono text-slate-800 overflow-x-auto leading-relaxed"><code id="code-inf">import torch
 from inferencer import InterleaveInferencer
 from modeling.bagel import Bagel
 from modeling.autoencoder import load_ae
@@ -887,7 +887,7 @@ print("Image generated successfully with 50% active parameters!")</code></pre>
               <i class="fa-regular fa-copy"></i> <span>Copy Code</span>
             </button>
           </div>
-          <pre class="bg-slate-950 p-5 rounded-2xl border border-slate-800 text-xs sm:text-sm font-mono text-emerald-300 overflow-x-auto leading-relaxed"><code id="code-ld"># Run GenEval image generation benchmark under 50% understanding layer dropping
+          <pre class="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-xs sm:text-sm font-mono text-slate-800 overflow-x-auto leading-relaxed"><code id="code-ld"># Run GenEval image generation benchmark under 50% understanding layer dropping
 bash scripts/eval/bagel/run_geneval_ld.sh   --keep_ratio 0.5   --drop_type block   --skip_mode und
 
 # Run Multimodal Understanding (MME benchmark) with Layer Dropping
@@ -902,7 +902,7 @@ bash scripts/eval/bagel/run_vlm_ld.sh   --dataset mme   --keep_ratio 0.8</code><
               <i class="fa-regular fa-copy"></i> <span>Copy Code</span>
             </button>
           </div>
-          <pre class="bg-slate-950 p-5 rounded-2xl border border-slate-800 text-xs sm:text-sm font-mono text-emerald-300 overflow-x-auto leading-relaxed"><code id="code-wr"># Step 1: Calibrate neuron activation importance scores across understanding tasks
+          <pre class="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-xs sm:text-sm font-mono text-slate-800 overflow-x-auto leading-relaxed"><code id="code-wr"># Step 1: Calibrate neuron activation importance scores across understanding tasks
 python scripts/neuron_partition.py   --model_path /path/to/bagel   --calibration_task understanding   --calibration_samples 64
 
 # Step 2: Evaluate width reduction on GenEval benchmark
@@ -917,7 +917,7 @@ bash scripts/eval/bagel/run_geneval_wr.sh   --keep_ratio 0.5   --target_componen
               <i class="fa-regular fa-copy"></i> <span>Copy Code</span>
             </button>
           </div>
-          <pre class="bg-slate-950 p-5 rounded-2xl border border-slate-800 text-xs sm:text-sm font-mono text-emerald-300 overflow-x-auto leading-relaxed"><code id="code-moe"># Explore interactive walkthrough in Jupyter Notebook:
+          <pre class="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-xs sm:text-sm font-mono text-slate-800 overflow-x-auto leading-relaxed"><code id="code-moe"># Explore interactive walkthrough in Jupyter Notebook:
 # notebooks/dense2sparse.ipynb
 
 from utils.moe_utils import convert_dense_to_sparse_moe
@@ -948,7 +948,7 @@ print("Dense model converted to Sparse MoE successfully!")</code></pre>
           </button>
         </div>
 
-        <pre class="bg-slate-950 p-6 rounded-2xl border border-slate-800 text-xs sm:text-sm font-mono text-slate-300 overflow-x-auto leading-relaxed"><code id="bibtex-content">@misc{he2025understandingharnessingsparsityunified,
+        <pre class="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-xs sm:text-sm font-mono text-slate-800 overflow-x-auto leading-relaxed"><code id="bibtex-content">@misc{he2025understandingharnessingsparsityunified,
   title={Understanding and Harnessing Sparsity in Unified Multimodal Models},
   author={Shwai He and Chaorui Deng and Ang Li and Shen Yan},
   year={2025},
