@@ -582,6 +582,7 @@ class QwenImagePipeline(DiffusionPipeline, QwenImageLoraLoaderMixin):
             num_images_per_prompt=num_images_per_prompt,
             max_sequence_length=max_sequence_length,
         )
+        negative_prompt_attentions = None
         if do_true_cfg:
             negative_prompt_embeds, negative_prompt_embeds_mask, negative_prompt_attentions = self.encode_prompt(
                 prompt=negative_prompt,
