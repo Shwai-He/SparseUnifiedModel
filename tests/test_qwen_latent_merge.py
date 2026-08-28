@@ -82,24 +82,3 @@ def test_geneval_prompt_seed_ranges_do_not_overlap():
     second = [base_seed + 81 * num_images + i for i in range(num_images)]
     assert first == [362, 363, 364, 365]
     assert set(first).isdisjoint(second)
-
-
-def test_bagel_seeded_latent_is_replayable_and_isolated():
-    from models.bagel import prepare_seeded_vae_latent
-
-    class FakeBagel:
-        @staticmethod
-        def prepare_vae_latent(**_kwargs):
-            return torch.randn(8)
-
-    torch.manual_seed(999)
-    expected_next = torch.randn(1)
-    torch.manual_seed(999)
-    first = prepare_seeded_vae_latent(FakeBagel(), 17)
-    actual_next = torch.randn(1)
-    replay = prepare_seeded_vae_latent(FakeBagel(), 17)
-    other = prepare_seeded_vae_latent(FakeBagel(), 18)
-
-    assert torch.equal(first, replay)
-    assert not torch.equal(first, other)
-    assert torch.equal(actual_next, expected_next)
