@@ -849,10 +849,10 @@ class Bagel(PreTrainedModel):
 
             x_t = x_t - v_t.to(x_t.device) * dts[i] # velocity pointing from data to noise
 
-            if i == 0:  #### prune parameters for next steps 
+            if i == 0 and getattr(self.config.llm_config, 'keep_ratio', None) is not None and getattr(self.config.llm_config, 'keep_ratio', 1.0) < 1.0:  #### prune parameters for next steps 
                 keep_ratio = self.config.llm_config.keep_ratio
-                compressed_layers_und = self.config.llm_config.compressed_layers_und
-                compressed_layers_gen = self.config.llm_config.compressed_layers_gen
+                compressed_layers_und = getattr(self.config.llm_config, 'compressed_layers_und', None)
+                compressed_layers_gen = getattr(self.config.llm_config, 'compressed_layers_gen', None)
         
                 for layer in self.language_model.model.layers:
                     self.prune(layer.mlp, keep_ratio=keep_ratio, compressed_layers=compressed_layers_und, )
