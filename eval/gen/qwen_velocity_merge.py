@@ -16,6 +16,7 @@ Explores constant alpha sweeps and dynamic time-decaying schedules
 """
 
 import argparse
+from contextlib import nullcontext
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import gc
@@ -434,10 +435,15 @@ def run_velocity_merge_trajectory(
     else:
         guidance = None
 
-    attention_kwargs = pipe.attention_kwargs or {}
+    attention_kwargs = getattr(pipe, "attention_kwargs", None) or {}
     txt_seq_lens_d = prompt_mask_d.sum(dim=1).tolist() if prompt_mask_d is not None else None
     txt_seq_lens_r = prompt_mask_r.sum(dim=1).tolist() if prompt_mask_r is not None else None
     neg_txt_seq_lens = negative_prompt_mask.sum(dim=1).tolist() if negative_prompt_mask is not None else None
+
+    def _cache_context(model: Any, mode: str):
+        if hasattr(model, "cache_context"):
+            return model.cache_context(mode)
+        return nullcontext()
 
     step_telemetry: List[Dict[str, Any]] = []
 
@@ -454,7 +460,7 @@ def run_velocity_merge_trajectory(
         # 1. Evaluate unconditional prediction (shared across both conditions if CFG > 1)
         neg_noise_pred = None
         if cfg_scale > 1.0 and negative_prompt_embeds is not None:
-            with pipe.transformer.cache_context("uncond"):
+            with _cache_context(pipe.transformer, "uncond"):
                 neg_noise_pred = pipe.transformer(
                     hidden_states=latents,
                     timestep=timestep / 1000,
@@ -470,7 +476,7 @@ def run_velocity_merge_trajectory(
         # 2. Evaluate direct velocity
         v_direct = None
         if alpha < 1.0:
-            with pipe.transformer.cache_context("cond"):
+            with _cache_context(pipe.transformer, "cond"):
                 raw_direct = pipe.transformer(
                     hidden_states=latents,
                     timestep=timestep / 1000,
@@ -487,7 +493,7 @@ def run_velocity_merge_trajectory(
         # 3. Evaluate reasoning velocity
         v_reasoning = None
         if alpha > 0.0:
-            with pipe.transformer.cache_context("cond"):
+            with _cache_context(pipe.transformer, "cond"):
                 raw_reasoning = pipe.transformer(
                     hidden_states=latents,
                     timestep=timestep / 1000,
