@@ -671,7 +671,7 @@ def run(args: argparse.Namespace) -> Path:
         if args.output_dir
         else repo_root / "results" / f"qwen_spatial_merge_{timestamp}"
     )
-    output_dir.mkdir(parents=True, exist_ok=False)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Save spatial mask visualization
     mask_vis_path = output_dir / "mask_visualization.png"
