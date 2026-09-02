@@ -48,12 +48,25 @@ from transformers.utils import auto_docstring, can_return_tuple, is_torch_flex_a
 from .configuration_qwen2_5_vl import Qwen2_5_VLConfig, Qwen2_5_VLTextConfig, Qwen2_5_VLVisionConfig
 
 
-if is_flash_attn_available():
-    from transformers.modeling_flash_attention_utils import apply_rotary_emb, flash_attn_varlen_func
+apply_rotary_emb = None
+flash_attn_varlen_func = None
+_flash_attention_forward = None
 
+if is_flash_attn_available():
+    try:
+        from transformers.modeling_flash_attention_utils import apply_rotary_emb, flash_attn_varlen_func
+    except (ImportError, AttributeError):
+        try:
+            from flash_attn.layers.rotary import apply_rotary_emb
+            from flash_attn import flash_attn_varlen_func
+        except (ImportError, AttributeError):
+            pass
 
 if is_flash_attn_available():
-    from transformers.modeling_flash_attention_utils import _flash_attention_forward
+    try:
+        from transformers.modeling_flash_attention_utils import _flash_attention_forward
+    except (ImportError, AttributeError):
+        pass
 
 if is_torch_flex_attn_available():
     from torch.nn.attention.flex_attention import BlockMask
@@ -157,8 +170,15 @@ def apply_rotary_pos_emb_flashatt(
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     cos = cos.chunk(2, dim=-1)[0].contiguous()
     sin = sin.chunk(2, dim=-1)[0].contiguous()
-    q_embed = apply_rotary_emb(q.float(), cos.float(), sin.float()).type_as(q)
-    k_embed = apply_rotary_emb(k.float(), cos.float(), sin.float()).type_as(k)
+    if apply_rotary_emb is not None:
+        q_embed = apply_rotary_emb(q.float(), cos.float(), sin.float()).type_as(q)
+        k_embed = apply_rotary_emb(k.float(), cos.float(), sin.float()).type_as(k)
+    else:
+        cos_full = torch.cat([cos, cos], dim=-1)
+        sin_full = torch.cat([sin, sin], dim=-1)
+        q_embed, k_embed = apply_rotary_pos_emb_vision(q, k, cos_full, sin_full)
+        q_embed = q_embed.type_as(q)
+        k_embed = k_embed.type_as(k)
     return q_embed, k_embed
 
 
