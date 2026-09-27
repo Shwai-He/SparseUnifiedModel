@@ -73,35 +73,46 @@
 ```
 
 #### 🎯 背景与痛点 (Background & Pain Points)
-* **启发式注意力权重累加的理论缺陷**：主流长上下文 KV 缓存淘汰算法（如 H2O、SnapKV、PyramidKV）均使用累积注意力分数 $s_j = \sum_{i} A_{i,j}$ 作为 Token $j$ 的重要性指标。然而，注意力层真正传递给后续残差流的是加权输出矩阵 $O = A V \in \mathbb{R}^{S_q \times d_v}$：
-  1. **忽略 Value 向量范数与方向抵消**：若某个历史 Token $j$ 的注意力权重 $A_{i,j}$ 较高，但其对应的 Value 向量范数 $\|V_j\|_2 \approx 0$，或者其 $V_j$ 与当前上下文均值方向完全重合，驱逐它对注意力输出 $O$ 的实际影响极小；反之，注意力权重中等但 $\|V_j\|_2$ 极大且承载正交关键信息的 Token 被驱逐后会造成严重的输出畸变。
-  2. **忽略 Softmax 分母重归一化效应（Denominator Renormalization）**：驱逐第 $j$ 个 Key 相当于将注意力得分 $Z_{i,j} \to -\infty$，这不仅移除了 $A_{i,j} V_j$，还会通过 Softmax 分母缩放将其余所有保留 Token 的注意力权重放大 $\frac{1}{1 - A_{i,j}}$ 倍。
+* **启发式注意力权重累加的理论缺陷**：主流长上下文 KV 缓存淘汰算法（如 H2O、SnapKV、PyramidKV）均使用累积注意力分数 $s _ j = \sum _ {i} A _ {i,j}$ 作为 Token $j$ 的重要性指标。然而，注意力层真正传递给后续残差流的是加权输出矩阵 $O = A V \in \mathbb{R}^{S _ q \times d _ v}$ ：
+  1. **忽略 Value 向量范数与方向抵消**：若某个历史 Token $j$ 的注意力权重 $A _ {i,j}$ 较高，但其对应的 Value 向量范数 $\Vert V _ j\Vert _ 2 \approx 0$ ，或者其 $V _ j$ 与当前上下文均值方向完全重合，驱逐它对注意力输出 $O$ 的实际影响极小；反之，注意力权重中等但 $\Vert V _ j\Vert _ 2$ 极大且承载正交关键信息的 Token 被驱逐后会造成严重的输出畸变。
+  2. **忽略 Softmax 分母重归一化效应（Denominator Renormalization）**：驱逐第 $j$ 个 Key 相当于将注意力得分 $Z _ {i,j} \to -\infty$ ，这不仅移除了 $A _ {i,j} V _ j$ ，还会通过 Softmax 分母缩放将其余所有保留 Token 的注意力权重放大 $\frac{1}{1 - A _ {i,j}}$ 倍。
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **基于 Optimal Brain Damage (OBD) 的二阶输出扰动构建**：
-   设某注意力头在查询窗口 $Q \in \mathbb{R}^{S_q \times d_k}$ 下的注意力概率矩阵为 $A = \text{Softmax}\left(\frac{Q K^\top}{\sqrt{d_k}}\right) \in \mathbb{R}^{S_q \times S_k}$，输出为 $O = A V \in \mathbb{R}^{S_q \times d_v}$。定义驱逐准则为最小化层输出矩阵的 Frobenius 范数平方误差 $\mathcal{E} = \frac{1}{2} \| O - \tilde{O} \|_F^2$。
+   设某注意力头在查询窗口 $Q \in \mathbb{R}^{S _ q \times d _ k}$ 下的注意力概率矩阵为 $A = \text{Softmax}\left(\frac{Q K^\top}{\sqrt{d _ k}}\right) \in \mathbb{R}^{S _ q \times S _ k}$ ，输出为 $O = A V \in \mathbb{R}^{S _ q \times d _ v}$ 。定义驱逐准则为最小化层输出矩阵的 Frobenius 范数平方误差 $\mathcal{E} = \frac{1}{2} \Vert O - \tilde{O} \Vert _ F^2$ 。
 2. **单 Value、单 Key 与联合 KV 对的闭式显著性公式（Closed-Form Saliency Scores）**：
-   * **孤立 Value 剪枝显著性（Isolated Value Saliency $\Omega_j^V$）**：
-     当将第 $j$ 个 Token 的 Value 向量置零（$V_j \leftarrow 0$）时，$\mathcal{E}$ 对 $V_j$ 的海森矩阵（Hessian）为 $\mathbf{H}_{V_j} = \frac{\partial^2 \mathcal{E}}{\partial V_j \partial V_j^\top} = \left(\sum_{i=1}^{S_q} A_{i,j}^2\right) I_{d_v}$。根据二阶泰勒展开，孤立 Value 显著性得分为：
-     $$\Omega_j^V = \frac{1}{2} V_j^\top \mathbf{H}_{V_j} V_j = \frac{1}{2} \| A_{:, j} \|_2^2 \cdot \| V_j \|_2^2$$
-     注意此处注意力权重是**平方和 $\|A_{:,j}\|_2^2$**（二阶能量）而非启发式的线性求和 $\|A_{:,j}\|_1$，且显式乘上了 Value 范数平方 $\|V_j\|_2^2$！
-   * **联合 KV 剪枝与 Softmax 重归一化修正（Joint KV Saliency $\Omega_j^{KV}$）**：
-     当真正从缓存中移除第 $j$ 个 KV 对（即令未归一化 logit $Z_{i,j} \to -\infty$）时，剩余 Token $k \neq j$ 的注意力权重精确变为 $\tilde{A}_{i,k} = \frac{A_{i,k}}{1 - A_{i,j}}$。因此，移除第 $j$ 个 KV 对在第 $i$ 个查询位置引起的**精确输出残差**为：
-     $$\Delta O_i^{(-j)} = O_i - \tilde{O}_i^{(-j)} = O_i - \frac{O_i - A_{i,j} V_j}{1 - A_{i,j}} = \frac{A_{i,j}}{1 - A_{i,j}} \big( V_j - O_i \big)$$
-     对该精确残差在所有查询位置 $i \in \{1, \dots, S_q\}$ 上求二阶能量，即得到极其优雅的**联合 KV 闭式显著性得分**：
-     $$\Omega_j^{KV} = \frac{1}{2} \sum_{i=1}^{S_q} \left( \frac{A_{i,j}}{1 - A_{i,j}} \right)^2 \big\| V_j - O_i \big\|_2^2$$
+   * **孤立 Value 剪枝显著性（Isolated Value Saliency $\Omega _ j^V$ ）**：
+     当将第 $j$ 个 Token 的 Value 向量置零（ $V _ j \leftarrow 0$ ）时， $\mathcal{E}$ 对 $V _ j$ 的海森矩阵（Hessian）为 $\mathbf{H} _ {V _ j} = \frac{\partial^2 \mathcal{E}}{\partial V _ j \partial V _ j^\top} = \left(\sum _ {i=1}^{S _ q} A _ {i,j}^2\right) I _ {d _ v}$ 。根据二阶泰勒展开，孤立 Value 显著性得分为：
+
+$$
+\Omega _ j^V = \frac{1}{2} V _ j^\top \mathbf{H} _ {V _ j} V _ j = \frac{1}{2} \Vert A _ {:, j} \Vert _ 2^2 \cdot \Vert V _ j \Vert _ 2^2
+$$
+
+注意此处注意力权重是**平方和 $\Vert A _ {:,j}\Vert _ 2^2$ **（二阶能量）而非启发式的线性求和 $\Vert A _ {:,j}\Vert _ 1$ ，且显式乘上了 Value 范数平方 $\Vert V _ j\Vert _ 2^2$ ！
+   * **联合 KV 剪枝与 Softmax 重归一化修正（Joint KV Saliency $\Omega _ j^{KV}$ ）**：
+     当真正从缓存中移除第 $j$ 个 KV 对（即令未归一化 logit $Z _ {i,j} \to -\infty$ ）时，剩余 Token $k \neq j$ 的注意力权重精确变为 $\tilde{A} _ {i,k} = \frac{A _ {i,k}}{1 - A _ {i,j}}$ 。因此，移除第 $j$ 个 KV 对在第 $i$ 个查询位置引起的**精确输出残差**为：
+
+$$
+\Delta O _ i^{(-j)} = O _ i - \tilde{O} _ i^{(-j)} = O _ i - \frac{O _ i - A _ {i,j} V _ j}{1 - A _ {i,j}} = \frac{A _ {i,j}}{1 - A _ {i,j}} \big( V _ j - O _ i \big)
+$$
+
+对该精确残差在所有查询位置 $i \in \lbrace1, \dots, S _ q\rbrace$ 上求二阶能量，即得到极其优雅的**联合 KV 闭式显著性得分**：
+
+$$
+\Omega _ j^{KV} = \frac{1}{2} \sum _ {i=1}^{S _ q} \left( \frac{A _ {i,j}}{1 - A _ {i,j}} \right)^2 \big\Vert V _ j - O _ i \big\Vert _ 2^2
+$$
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
-* **即插即用全面提升主流基线**：在 **Llama-3.1-8B-Instruct**、**Qwen-2.5-7B/14B-Instruct** 与 **Mistral-7B** 上，将 OBCache 的 $\Omega_j^{KV}$ 闭式打分直接替换 H2O、SnapKV 与 PyramidKV 的启发式打分（零额外超参），在 **LongBench**（16 个长文本任务）与 **RULER**（128K 极限大海捞针与多跳追踪）上，在仅保留 **5%–10% KV 缓存预算**下将平均准确率提升 **`+2.8%` 至 `+6.4%`**。
-* **计算开销近乎为零**：$\|V_j - O_i\|_2^2 = \|V_j\|_2^2 - 2 \langle V_j, O_i \rangle + \|O_i\|_2^2$ 可直接复用 FlashAttention 已经算出的输出向量 $O_i$，无需显式物化完整的 $S_q \times S_k$ 矩阵，Prefill 延迟增加小于 `1.2%`。
+* **即插即用全面提升主流基线**：在 **Llama-3.1-8B-Instruct**、**Qwen-2.5-7B/14B-Instruct** 与 **Mistral-7B** 上，将 OBCache 的 $\Omega _ j^{KV}$ 闭式打分直接替换 H2O、SnapKV 与 PyramidKV 的启发式打分（零额外超参），在 **LongBench**（16 个长文本任务）与 **RULER**（128K 极限大海捞针与多跳追踪）上，在仅保留 **5%–10% KV 缓存预算**下将平均准确率提升 **`+2.8%` 至 `+6.4%`**。
+* **计算开销近乎为零**： $\Vert V _ j - O _ i\Vert _ 2^2 = \Vert V _ j\Vert _ 2^2 - 2 \langle V _ j, O _ i \rangle + \Vert O _ i\Vert _ 2^2$ 可直接复用 FlashAttention 已经算出的输出向量 $O _ i$ ，无需显式物化完整的 $S _ q \times S _ k$ 矩阵，Prefill 延迟增加小于 `1.2%`。
 
 #### 🔗 与我们工作（Our Works）的直接关联与落地启发
 1. **对我们 `vla-dtr` & `Efficient Ads / HisTrim` 中 `Exclude-Self Value-Space Perpendicular KV Pruning` 的精确二阶理论证明！**
-   * 请仔细对比 OBCache 的核心公式 $\Omega_j^{KV} = \frac{1}{2}\sum_i \left(\frac{A_{i,j}}{1 - A_{i,j}}\right)^2 \|V_j - O_i\|_2^2$ 与我们在 `vla-dtr`（定律 5）和 `ads-rsi` 中独立提出的 **`Exclude-Self Value-Space Perpendicular VLM KV Pruning`**：
-     * 其中的因子 $\frac{A_{i,j}}{1 - A_{i,j}}$ 正是**排除自身注意力权重后的重归一化系数（Exclude-Self Renormalization）**！
-     * 其中的 $\|V_j - O_i\|_2^2$ 度量的正是第 $j$ 个 Token 的 Value 向量相对于当前聚合输出均值 $O_i$ 的**偏离能量（即正交/非共线奇异度）**！如果 $V_j \approx O_i$（即该 Token 的 Value 与上下文均值完全共线/冗余），即便 $A_{i,j}$ 再大，$\|V_j - O_i\|_2^2 \approx 0$，驱逐它也完全不改变注意力输出！
+   * 请仔细对比 OBCache 的核心公式 $\Omega _ j^{KV} = \frac{1}{2}\sum _ i \left(\frac{A _ {i,j}}{1 - A _ {i,j}}\right)^2 \Vert V _ j - O _ i\Vert _ 2^2$ 与我们在 `vla-dtr`（定律 5）和 `ads-rsi` 中独立提出的 **`Exclude-Self Value-Space Perpendicular VLM KV Pruning`**：
+     * 其中的因子 $\frac{A _ {i,j}}{1 - A _ {i,j}}$ 正是**排除自身注意力权重后的重归一化系数（Exclude-Self Renormalization）**！
+     * 其中的 $\Vert V _ j - O _ i\Vert _ 2^2$ 度量的正是第 $j$ 个 Token 的 Value 向量相对于当前聚合输出均值 $O _ i$ 的**偏离能量（即正交/非共线奇异度）**！如果 $V _ j \approx O _ i$ （即该 Token 的 Value 与上下文均值完全共线/冗余），即便 $A _ {i,j}$ 再大， $\Vert V _ j - O _ i\Vert _ 2^2 \approx 0$ ，驱逐它也完全不改变注意力输出！
 2. **落地融合方案（Perp-OBCache）**：
-   * 在我们的论文撰写与代码实现中，可以直接引用 ICML 2026 的 OBCache 作为二阶泰勒理论背书，并指出我们进一步将 $\|V_j - O_i\|_2^2$ 投影到了输出投影矩阵 $W_O$ 之后的残差切空间 $\|(V_j - O_i) W_O P_\perp(h_i)\|_2^2$，从而构成了比 OBCache 更进一层的**流形正交切空间二阶最优脑缓存剪枝（Manifold-Orthogonal OBCache）**。
+   * 在我们的论文撰写与代码实现中，可以直接引用 ICML 2026 的 OBCache 作为二阶泰勒理论背书，并指出我们进一步将 $\Vert V _ j - O _ i\Vert _ 2^2$ 投影到了输出投影矩阵 $W _ O$ 之后的残差切空间 $\Vert(V _ j - O _ i) W _ O P _ \perp(h _ i)\Vert _ 2^2$ ，从而构成了比 OBCache 更进一层的**流形正交切空间二阶最优脑缓存剪枝（Manifold-Orthogonal OBCache）**。
 
 ---
 
@@ -158,17 +169,25 @@
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **作为可执行程序的世界表示（World-as-Executable-Program）**：
-   将观测到的物理场景视频 $I_{1:T}$ 背后的隐状态世界建模为一段参数化的可执行物理仿真程序 $C = (\mathcal{O}, \Theta_{\text{phys}}, f_{\text{dyn}})$，其中 $\mathcal{O}$ 为几何实体集合，$\Theta_{\text{phys}} = \{m_i, \mu_i, e_i, \mathbf{v}_{i,0}\}$ 为连续物理参数（质量、摩擦系数、恢复系数、初速度），$f_{\text{dyn}}$ 为确定性物理求解器（如 Box2D / MuJoCo / Blender Python API）。
+   将观测到的物理场景视频 $I _ {1:T}$ 背后的隐状态世界建模为一段参数化的可执行物理仿真程序 $C = (\mathcal{O}, \Theta _ {\text{phys}}, f _ {\text{dyn}})$ ，其中 $\mathcal{O}$ 为几何实体集合， $\Theta _ {\text{phys}} = \lbrace m _ i, \mu _ i, e _ i, \mathbf{v} _ {i,0}\rbrace$ 为连续物理参数（质量、摩擦系数、恢复系数、初速度）， $f _ {\text{dyn}}$ 为确定性物理求解器（如 Box2D / MuJoCo / Blender Python API）。
 2. **溯因推理智能体发现闭环（Abductive Discovery Loop）**：
-   寻找最能解释观测视频 $I_{1:T}$ 的可执行代码世界 $C^*$ 被形式化为最大后验（MAP）逆问题：
-   $$C^* = \arg\max_{C \in \mathcal{C}} \log P(I_{1:T} \mid \text{Render}(\text{Sim}(C))) + \log P_{\text{prior}}(C)$$
-   智能体通过 $K$ 步迭代完成溯因搜索：在第 $k$ 步，执行当前代码假设 $C^{(k)}$ 获得仿真轨迹 $\hat{\mathbf{x}}_{1:T}^{(k)} = \text{Sim}(C^{(k)})$，并与从真实视频提取的目标追踪轨迹 $\mathbf{x}_{1:T}^{\text{obs}}$ 计算时空运动学残差（Kinematic Discrepancy）：
-   $$\mathcal{L}_{\text{kin}}(C^{(k)}) = \sum_{t=1}^T \Big( \| \hat{\mathbf{x}}_t^{(k)} - \mathbf{x}_t^{\text{obs}} \|_2^2 + \lambda_v \| \hat{\mathbf{v}}_t^{(k)} - \mathbf{v}_t^{\text{obs}} \|_2^2 \Big)$$
-   智能体将结构化残差诊断报告（例如：“仿真物体在第 1.2s 碰撞后反弹高度偏低 18%，表明恢复系数 $e$ 被低估”）反馈给代码生成策略 $\pi_\theta(C^{(k+1)} \mid C^{(k)}, \nabla \mathcal{L}_{\text{kin}})$，实现符号结构与连续物理参数的联合修正。
+   寻找最能解释观测视频 $I _ {1:T}$ 的可执行代码世界 $C^\star$ 被形式化为最大后验（MAP）逆问题：
+
+$$
+C^\star = \arg\max _ {C \in \mathcal{C}} \log P(I _ {1:T} \mid \text{Render}(\text{Sim}(C))) + \log P _ {\text{prior}}(C)
+$$
+
+   智能体通过 $K$ 步迭代完成溯因搜索：在第 $k$ 步，执行当前代码假设 $C^{(k)}$ 获得仿真轨迹 $\hat{\mathbf{x}} _ {1:T}^{(k)} = \text{Sim}(C^{(k)})$ ，并与从真实视频提取的目标追踪轨迹 $\mathbf{x} _ {1:T}^{\text{obs}}$ 计算时空运动学残差（Kinematic Discrepancy）：
+
+$$
+\mathcal{L} _ {\text{kin}}(C^{(k)}) = \sum _ {t=1}^T \Big( \Vert \hat{\mathbf{x}} _ t^{(k)} - \mathbf{x} _ t^{\text{obs}} \Vert _ 2^2 + \lambda _ v \Vert \hat{\mathbf{v}} _ t^{(k)} - \mathbf{v} _ t^{\text{obs}} \Vert _ 2^2 \Big)
+$$
+
+   智能体将结构化残差诊断报告（例如：“仿真物体在第 1.2s 碰撞后反弹高度偏低 18%，表明恢复系数 $e$ 被低估”）反馈给代码生成策略 $\pi _ \theta(C^{(k+1)} \mid C^{(k)}, \nabla \mathcal{L} _ {\text{kin}})$ ，实现符号结构与连续物理参数的联合修正。
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * **定量物理推理与反事实预测大幅领先**：在涵盖刚体碰撞、流体倾倒、多摆耦合及遮挡轨迹预测的物理推理基准（PhysBench、CLEVRER、ComPhy）上，**Code as Worlds** 将开源与闭源顶级 VLM 的定量物理问答准确率从 `46.2%` 大幅提升至 **`78.9%`**（`+32.7%`）。
-* **可扩展合成数据飞轮**：利用智能体自主发现并验证通过的可执行代码世界 $C^*$，可通过扰动代码中的物理参数自动合成数十万条具备 100% 精确物理真值的反事实推理轨迹，用于蒸馏训练轻量级 VLM，使其单次前向推理能力显著跃升。
+* **可扩展合成数据飞轮**：利用智能体自主发现并验证通过的可执行代码世界 $C^\star$ ，可通过扰动代码中的物理参数自动合成数十万条具备 100% 精确物理真值的反事实推理轨迹，用于蒸馏训练轻量级 VLM，使其单次前向推理能力显著跃升。
 
 #### 🔗 与我们工作（Our Works）的直接关联与落地启发
 * **对我们 `Physical AI / VLA Loop & Distillation`（`vla-distillation` & `vla-loop`）的合成数据飞轮启发**：
@@ -202,11 +221,15 @@
 
 #### 💡 核心方法与数学实现 (Mathematical Formulations)
 1. **双层重要度融合准则 (Combine-then-Filter Dual-Level Criterion)**：
-   - 同时提取语言指令在 Prefill 阶段对第 $i$ 个视觉 Token 的语义关注度 $I_{\text{sem}}^{(i)}$，以及解码器生成动作 Token 时的交叉注意力得分 $I_{\text{act}, t}^{(i)}$；
+   - 同时提取语言指令在 Prefill 阶段对第 $i$ 个视觉 Token 的语义关注度 $I _ {\text{sem}}^{(i)}$ ，以及解码器生成动作 Token 时的交叉注意力得分 $I _ {\text{act}, t}^{(i)}$ ；
 2. **跨时间步动作相关性平滑 (Temporal Action Smoothing)**：
    - 利用连续控制帧之间的时间连续性，引入历史动作注意力动量缓存：
-     $$\tilde{I}_{\text{act}, t}^{(i)} = \lambda \tilde{I}_{\text{act}, t-1}^{(i)} + (1 - \lambda) I_{\text{act}, t}^{(i)}$$
-   - 仅保留综合得分 $S_t^{(i)} = I_{\text{sem}}^{(i)} \cdot \tilde{I}_{\text{act}, t}^{(i)}$ 最高的视觉 Token 子集。
+
+$$
+\tilde{I} _ {\text{act}, t}^{(i)} = \lambda \tilde{I} _ {\text{act}, t-1}^{(i)} + (1 - \lambda) I _ {\text{act}, t}^{(i)}
+$$
+
+   - 仅保留综合得分 $S _ t^{(i)} = I _ {\text{sem}}^{(i)} \cdot \tilde{I} _ {\text{act}, t}^{(i)}$ 最高的视觉 Token 子集。
 
 #### 📊 关键实验与结论 (Experiments & Findings)
 * 在 OpenVLA 与主流机器人操控基准（LIBERO-Spatial / Object / Goal / Long）上，剔除 **50%–75% 视觉 Token** 仍保持与全量 Token 持平的任务成功率，端到端控制频率显著提升。
@@ -218,7 +241,7 @@
   * [Paper #9: *Uncovering the Redundancy in Transformers via Layer Dropping* (TMLR 2025)]
 * **🔬 机理对比与技术演进**：
   * 我们在 W38 周记（9/15–9/17）中深刻总结了两条核心定律：（1）**Layer 0（纯 ID Embedding、尚未经过上下文交互）绝不能直接做激进 Token Drop**，必须在表征充分上下文化之后再按浅层保守、深层激进的曲线压缩；（2）**VLA 的鲁棒性来源于三个时间尺度的“伤口愈合（Wound Healing）”纠错通道**（步内注意力、步间去噪、episode 内周期性视觉重锚）；
-  * `VLA-Pruner` 的时域平滑动量 $\tilde{I}_{\text{act}, t}$ 恰恰显式利用了我们指出的第三层“episode 内时域连续重锚”特性！
+  * `VLA-Pruner` 的时域平滑动量 $\tilde{I} _ {\text{act}, t}$ 恰恰显式利用了我们指出的第三层“episode 内时域连续重锚”特性！
 * **💡 下一阶段研究（Next Research Directions）落地启发**：
   * 在 `Physical AI` (MLSys) 论文中，可将 `VLA-Pruner` 纳入 Related Work 与对比讨论，突出我们 **全栈四维协同压缩（数据 DTR + Token `HiSTrim` + 层 `VLADrop/Loop` + 步数 `SnapFlow` 单步蒸馏）** 相比单一视觉 Token 剪枝在真实硬件延迟（Batch=1 访存带宽瓶颈）上的系统级代差优势。
 
@@ -267,14 +290,22 @@
 ```
 
 #### 🎯 背景与痛点 (Background & Pain Points)
-* **深层循环中的“初始锚点遗忘”与反向传播雅可比谱半径失控**：当一个循环 Transformer 连续迭代 $K \ge 8$ 步时，第 $k$ 步的隐状态 $H^{(k)}$ 经过反复的非线性自注意力和 FFN 变换后，逐渐丢失了原始输入 Token 的精细词法锚点信息；同时在反向传播（BPTT）中，共享权重连乘 $\prod_{k=1}^K \big(I + \frac{\partial f_\theta}{\partial H^{(k)}}\big)$ 极易引发梯度震荡或消失。
+* **深层循环中的“初始锚点遗忘”与反向传播雅可比谱半径失控**：当一个循环 Transformer 连续迭代 $K \ge 8$ 步时，第 $k$ 步的隐状态 $H^{(k)}$ 经过反复的非线性自注意力和 FFN 变换后，逐渐丢失了原始输入 Token 的精细词法锚点信息；同时在反向传播（BPTT）中，共享权重连乘 $\prod _ {k=1}^K \big(I + \frac{\partial f _ \theta}{\partial H^{(k)}}\big)$ 极易引发梯度震荡或消失。
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **零参数初始注意力注入（Parameter-Free Attention Injection）**：
-   缓存首轮（$k=0$）计算得到的初始键值张量 $(K^{(0)}, V^{(0)})$。在后续任意第 $k \in \{1, \dots, K\}$ 次循环中，通过凸组合或拼接将初始锚点注入当前步的注意力键值中：
-   $$O^{(k)} = \text{Softmax}\left( \frac{Q^{(k)} \big( (1-\lambda) K^{(k)} + \lambda K^{(0)} \big)^\top}{\sqrt{d_k}} \right) \Big( (1-\lambda) V^{(k)} + \lambda V^{(0)} \Big)$$
-   这一设计在计算图上为每一个循环步 $k$ 建立了一条直通初始表征 $(K^{(0)}, V^{(0)})$ 的**一阶梯度短路高速通道（Direct Gradient Highway）**：
-   $$\frac{\partial \mathcal{L}}{\partial H^{(0)}} = \frac{\partial \mathcal{L}}{\partial H^{(K)}} \prod_{k=1}^K J_k + \lambda \sum_{k=1}^K \frac{\partial \mathcal{L}}{\partial O^{(k)}} \frac{\partial O^{(k)}}{\partial (K^{(0)}, V^{(0)})} \frac{\partial (K^{(0)}, V^{(0)})}{\partial H^{(0)}}$$
+   缓存首轮（ $k=0$ ）计算得到的初始键值张量 $\left(K^{(0)}, V^{(0)}\right)$ 。在后续任意第 $k \in \lbrace1, \dots, K\rbrace$ 次循环中，通过凸组合或拼接将初始锚点注入当前步的注意力键值中：
+
+$$
+O^{(k)} = \text{Softmax}\left( \frac{Q^{(k)} \big( (1-\lambda) K^{(k)} + \lambda K^{(0)} \big)^\top}{\sqrt{d _ k}} \right) \Big( (1-\lambda) V^{(k)} + \lambda V^{(0)} \Big)
+$$
+
+   这一设计在计算图上为每一个循环步 $k$ 建立了一条直通初始表征 $\left(K^{(0)}, V^{(0)}\right)$ 的**一阶梯度短路高速通道（Direct Gradient Highway）**：
+
+$$
+\frac{\partial \mathcal{L}}{\partial H^{(0)}} = \frac{\partial \mathcal{L}}{\partial H^{(K)}} \prod _ {k=1}^K J _ k + \lambda \sum _ {k=1}^K \frac{\partial \mathcal{L}}{\partial O^{(k)}} \frac{\partial O^{(k)}}{\partial (K^{(0)}, V^{(0)})} \frac{\partial (K^{(0)}, V^{(0)})}{\partial H^{(0)}}
+$$
+
    从而彻底消除了高循环步数下的梯度消失与震荡！
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
@@ -282,7 +313,7 @@
 
 #### 🔗 与我们工作（Our Works）的直接关联与落地启发
 * **直接印证我们 `vla-loop` 定律（Lightweight Dropped-Span VLM Cross-KV Grounding）！**
-  * 我们在 `vla-loop` 中发现，当动作专家循环迭代 $K=3,4$ 步时，若每一步都强绑回初始锚点 VLM Prefix KV（即此处的 $(K^{(0)}, V^{(0)})$），即可完美阻止循环轨迹漂移！该论文的梯度短路公式为我们 `vla-loop` 的 Cross-KV Grounding 提供了极其漂亮的反向传播雅可比谱稳定性证明。
+  * 我们在 `vla-loop` 中发现，当动作专家循环迭代 $K=3,4$ 步时，若每一步都强绑回初始锚点 VLM Prefix KV（即此处的 $\left(K^{(0)}, V^{(0)}\right)$ ），即可完美阻止循环轨迹漂移！该论文的梯度短路公式为我们 `vla-loop` 的 Cross-KV Grounding 提供了极其漂亮的反向传播雅可比谱稳定性证明。
 
 ---
 
@@ -328,11 +359,15 @@
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **浅层视觉内生去重 + 中层指令对齐聚焦的两阶段架构**：
-   在浅层 $l_1$，仅基于视觉自注意力与空间局部方差剔除纯背景冗余块（保留率 $\rho_1 \approx 50\%$）；在中层 $l_2$，利用已对齐的跨模态交互特征进一步筛选与指令强相关的核心块（保留率 $\rho_2 \approx 15\%$）。
+   在浅层 $l _ 1$ ，仅基于视觉自注意力与空间局部方差剔除纯背景冗余块（保留率 $\rho _ 1 \approx 50$ %）；在中层 $l _ 2$ ，利用已对齐的跨模态交互特征进一步筛选与指令强相关的核心块（保留率 $\rho _ 2 \approx 15$ %）。
 2. **注意力对数掩码软硬退火（Differentiable Log-Mask Annealing）**：
-   训练期将连续重要性得分 $s_j \in (0, 1)$ 通过温度 $\tau$ 转化为软掩码 $m_j(\tau) = \sigma\big((s_j - \theta_{\text{thr}})/\tau\big)$，并以对数偏置注入注意力矩阵：
-   $$\tilde{A}_{i, j} = \frac{m_j(\tau) \exp(q_i^\top k_j / \sqrt{d_k})}{\sum_{r} m_r(\tau) \exp(q_i^\top k_r / \sqrt{d_k})}$$
-   随着 $\tau \to 0^+$，$m_j(\tau) \to \{0, 1\}$，训练期软注意力平滑收敛至推理期的物理硬剔除，实现零训练-推理鸿沟。
+   训练期将连续重要性得分 $s _ j \in (0, 1)$ 通过温度 $\tau$ 转化为软掩码 $m _ j(\tau) = \sigma\big((s _ j - \theta _ {\text{thr}})/\tau\big)$ ，并以对数偏置注入注意力矩阵：
+
+$$
+\tilde{A} _ {i, j} = \frac{m _ j(\tau) \exp(q _ i^\top k _ j / \sqrt{d _ k})}{\sum _ {r} m _ r(\tau) \exp(q _ i^\top k _ r / \sqrt{d _ k})}
+$$
+
+   随着 $\tau \to 0^+$ ， $m _ j(\tau) \to \lbrace0, 1\rbrace$ ，训练期软注意力平滑收敛至推理期的物理硬剔除，实现零训练-推理鸿沟。
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在 **LLaVA-1.5/NeXT** 与 **Qwen2-VL** 上，LearnPruner 仅保留 **11.1%–16.7% 视觉 Token**，FLOPs 降低 **68%**，在 10 项多模态基准上的平均精度达到全 Token 模型的 **99.6%**。
@@ -374,13 +409,17 @@
 ```
 
 #### 🎯 背景与痛点 (Background & Pain Points)
-* **纯重要性排序在视觉模态上的“局部高光扎堆陷阱”**：在多模态长上下文中，视觉特征具有极强的空间局部相关性。若仅按注意力得分 Top-$B$ 挑选视觉 KV，预算内的 $B$ 个槽位会被画面中心最显著物体的几十个高度相似的相邻图像块占满，而画面边缘的关键次要物体则被完全清空。
+* **纯重要性排序在视觉模态上的“局部高光扎堆陷阱”**：在多模态长上下文中，视觉特征具有极强的空间局部相关性。若仅按注意力得分 Top- $B$ 挑选视觉 KV，预算内的 $B$ 个槽位会被画面中心最显著物体的几十个高度相似的相邻图像块占满，而画面边缘的关键次要物体则被完全清空。
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **模态自适应重要性-多样性边际增益准则（Modality-Adaptive Marginal Gain）**：
    在贪心或分块并行选择保留集 $S$ 时，第 $j$ 个候选 Token 的综合得分为其注意力重要性减去其与已选集合在 Key/Value 空间的最大余弦冗余度：
-   $$\Phi(j \mid S) = s_{\text{imp}}(j) - \lambda_m \cdot \max_{i \in S} \left( \frac{\langle K_j, K_i \rangle}{\|K_j\|_2 \|K_i\|_2} \right)$$
-   其中视觉模态的排斥权重 $\lambda_{\text{vis}} > \lambda_{\text{text}}$，根据各层模态内平均余弦相似度自动校准。
+
+$$
+\Phi(j \mid S) = s _ {\text{imp}}(j) - \lambda _ m \cdot \max _ {i \in S} \left( \frac{\langle K _ j, K _ i \rangle}{\Vert K _ j\Vert _ 2 \Vert K _ i\Vert _ 2} \right)
+$$
+
+   其中视觉模态的排斥权重 $\lambda _ {\text{vis}} > \lambda _ {\text{text}}$ ，根据各层模态内平均余弦相似度自动校准。
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在 **MileBench**、**Video-MME** 与多图长上下文评测中，MixKV 在 **10% 极限缓存预算**下比 SnapKV 与 PyramidKV 平均提升 **`+5.3%`**。
@@ -432,13 +471,17 @@
 ```
 
 #### 🎯 背景与痛点 (Background & Pain Points)
-* **仅重采样动作无法清除已污染的内部记忆状态**：在长程 Web 操作或代码修复任务中，当智能体的内部信念/上下文记忆 $z_t$ 已经混入了错误的假设时，单纯利用世界模型拒绝当前动作并从同一状态 $z_t$ 重新采样，依然会反复生成同类的错误动作。
+* **仅重采样动作无法清除已污染的内部记忆状态**：在长程 Web 操作或代码修复任务中，当智能体的内部信念/上下文记忆 $z _ t$ 已经混入了错误的假设时，单纯利用世界模型拒绝当前动作并从同一状态 $z _ t$ 重新采样，依然会反复生成同类的错误动作。
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **基于反事实进度判别的内部状态编辑算子（Counterfactual State Revision）**：
-   当世界模型预测下一状态 $\hat{z}_{t+1} = f_{\text{WM}}(z_t, a_t)$ 未能通过动作评判器 $J_\phi(z_t, a_t, \hat{z}_{t+1}) < \tau$ 时，触发状态编辑器 $\mathcal{E}_\psi$ 直接在信念状态/工作记忆上施加反事实修正增量：
-   $$z_t^{\text{rev}} = z_t + \mathcal{E}_\psi\big( z_t, a_t, \hat{z}_{t+1}, \nabla_{z_t} J_\phi(z_t, a_t, \hat{z}_{t+1}) \big)$$
-   随后基于修正后的干净状态 $z_t^{\text{rev}}$ 重新生成可执行动作 $a_t^* \sim \pi_\theta(\cdot \mid z_t^{\text{rev}})$。
+   当世界模型预测下一状态 $\hat{z} _ {t+1} = f _ {\text{WM}}(z _ t, a _ t)$ 未能通过动作评判器 $J _ \phi(z _ t, a _ t, \hat{z} _ {t+1}) < \tau$ 时，触发状态编辑器 $\mathcal{E} _ \psi$ 直接在信念状态/工作记忆上施加反事实修正增量：
+
+$$
+z _ t^{\text{rev}} = z _ t + \mathcal{E} _ \psi\big( z _ t, a _ t, \hat{z} _ {t+1}, \nabla _ {z _ t} J _ \phi(z _ t, a _ t, \hat{z} _ {t+1}) \big)
+$$
+
+   随后基于修正后的干净状态 $z _ t^{\text{rev}}$ 重新生成可执行动作 $a _ t^\star \sim \pi _ \theta(\cdot \mid z _ t^{\text{rev}})$ 。
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在 **VisualWebArena**、**OSWorld** 与长程具身任务上，AEWM 将不可逆错误操作率降低 **52%**，端到端任务成功率比无状态编辑的 Tree-of-Thoughts 高出 **`+10.8%`**。
@@ -478,18 +521,21 @@
 ```
 
 #### 🎯 背景与痛点 (Background & Pain Points)
-* **7B+ 视觉语言骨干限制了边缘端机器人的板载部署**：主流通用 VLA（如 OpenVLA、$\pi_0$）依赖 3B–7B 的 VLM 主干处理每帧高分辨率图像，在车载或机载边缘 GPU 上单帧推理高达数百毫秒。
+* **7B+ 视觉语言骨干限制了边缘端机器人的板载部署**：主流通用 VLA（如 OpenVLA、 $\pi _ 0$ ）依赖 3B–7B 的 VLM 主干处理每帧高分辨率图像，在车载或机载边缘 GPU 上单帧推理高达数百毫秒。
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **关系亲和矩阵蒸馏 + 动作分布联合对齐**：
-   由于教师与学生主干隐藏维度不同（$d_T \neq d_S$），RT-VLA 不做刚性逐元素回归，而是对齐归一化特征余弦关系矩阵 $G^{(T)} = \tilde{H}_T \tilde{H}_T^\top \in \mathbb{R}^{N \times N}$ 与动作输出：
-   $$\mathcal{L}_{\text{RT-VLA}} = \big\| \pi_S(x) - \pi_T(x) \big\|_1 + \lambda_{\text{rel}} \left\| \frac{H_S H_S^\top}{\|H_S H_S^\top\|_F} - \frac{H_T H_T^\top}{\|H_T H_T^\top\|_F} \right\|_F^2$$
+   由于教师与学生主干隐藏维度不同（ $d _ T \neq d _ S$ ），RT-VLA 不做刚性逐元素回归，而是对齐归一化特征余弦关系矩阵 $G^{(T)} = \tilde{H} _ T \tilde{H} _ T^\top \in \mathbb{R}^{N \times N}$ 与动作输出：
+
+$$
+\mathcal{L} _ {\text{RT-VLA}} = \big\Vert \pi _ S(x) - \pi _ T(x) \big\Vert _ 1 + \lambda _ {\text{rel}} \left\lVert \frac{H _ S H _ S^\top}{\Vert H _ S H _ S^\top\Vert _ F} - \frac{H _ T H _ T^\top}{\Vert H _ T H _ T^\top\Vert _ F} \right\rVert _ F^2
+$$
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在机器人操作基准上，RT-VLA 将纯视觉模式下的编码与推理耗时降低 **44.8x**，端到端帧率突破 **60 Hz**，同时保留了 7B 教师模型 **96% 以上** 的任务成功率。
 
 #### 🔗 与我们工作（Our Works）的直接关联与落地启发
-* **为我们 `vla-distillation` 提供了极佳的跨尺度关系蒸馏损失项**：可将 $\big\| \tilde{H}_S \tilde{H}_S^\top - \tilde{H}_T \tilde{H}_T^\top \big\|_F^2$ 结合进我们的宽度+深度联合压缩（Tri-Orthogonal G19）中，免除维度对齐投影矩阵的参数开销。
+* **为我们 `vla-distillation` 提供了极佳的跨尺度关系蒸馏损失项**：可将 $\big\Vert \tilde{H} _ S \tilde{H} _ S^\top - \tilde{H} _ T \tilde{H} _ T^\top \big\Vert _ F^2$ 结合进我们的宽度+深度联合压缩（Tri-Orthogonal G19）中，免除维度对齐投影矩阵的参数开销。
 
 ---
 
@@ -531,8 +577,11 @@
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **双层语义-运动解耦条件路由（Bi-Level Semantic-Kinematic Conditional Routing）**：
-   高层路由器 $G_{\text{task}}(c_{\text{lang}}, I_{\text{global}})$ 根据语言指令与全局视觉场景选择任务簇 $m \in \{1, \dots, M\}$，低层路由器 $G_{\text{skill}}^{(m)}(s_{\text{prop}}, I_{\text{wrist}})$ 根据本体关节状态与腕部相机高频特征在簇内选择动作基元专家 $e \in \mathcal{E}_m$：
-   $$P(e \mid x) = \sum_{m=1}^M G_{\text{task}}(m \mid c_{\text{lang}}, I_{\text{global}}) \cdot G_{\text{skill}}^{(m)}(e \mid s_{\text{prop}}, I_{\text{wrist}}) \cdot \mathbb{I}(e \in \mathcal{E}_m)$$
+   高层路由器 $G _ {\text{task}}(c _ {\text{lang}}, I _ {\text{global}})$ 根据语言指令与全局视觉场景选择任务簇 $m \in \lbrace1, \dots, M\rbrace$ ，低层路由器 $G _ {\text{skill}}^{(m)}(s _ {\text{prop}}, I _ {\text{wrist}})$ 根据本体关节状态与腕部相机高频特征在簇内选择动作基元专家 $e \in \mathcal{E} _ m$ ：
+
+$$
+P(e \mid x) = \sum _ {m=1}^M G _ {\text{task}}(m \mid c _ {\text{lang}}, I _ {\text{global}}) \cdot G _ {\text{skill}}^{(m)}(e \mid s _ {\text{prop}}, I _ {\text{wrist}}) \cdot \mathbb{I}(e \in \mathcal{E} _ m)
+$$
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在跨 50+ 任务的 Open-X Embodiment 与仿真套件上，HiMoE-VLA 比同激活参数量的稠密 VLA 与单层 MoE-VLA 平均成功率提升 **`+8.7%`**。
@@ -580,17 +629,28 @@
 ```
 
 #### 🎯 背景与痛点 (Background & Pain Points)
-* **多步 ODE 动作去噪拖慢具身实时控制频率**：以 $\pi_0$、$\pi_{0.5}$ 与 GR00T 为代表的现代视觉语言动作模型（VLAs）普遍采用条件流匹配（Conditional Flow Matching）动作专家，在推理时需对动作块（Action Chunk $A \in \mathbb{R}^{H \times d_a}$）执行 $N=10$ 步欧拉积分。尽管动作专家本身参数量较小（如 300M），但 10 次串行交叉注意力与 FFN 前向传播占用了超过 65% 的端到端推理延迟。
+* **多步 ODE 动作去噪拖慢具身实时控制频率**：以 $\pi _ 0$ 、 $\pi _ {0.5}$ 与 GR00T 为代表的现代视觉语言动作模型（VLAs）普遍采用条件流匹配（Conditional Flow Matching）动作专家，在推理时需对动作块（Action Chunk $A \in \mathbb{R}^{H \times d _ a}$ ）执行 $N=10$ 步欧拉积分。尽管动作专家本身参数量较小（如 300M），但 10 次串行交叉注意力与 FFN 前向传播占用了超过 65% 的端到端推理延迟。
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **步长条件化割线速度场自蒸馏（Step-Conditioned Chord Velocity Self-Distillation）**：
-   扩展动作专家网络输入为 $(a_t, t, \delta)$，其中 $t \in [0, 1)$ 为当前流时刻，$\delta \in \{2^{-k}\}$ 为目标积分跨度（Step Size）。当跨度从 $\delta$ 倍增至 $2\delta$ 时，利用指数移动平均（EMA）目标网络 $\theta^-$ 执行两次半步积分生成割线目标速度（Chord Velocity）：
-   $$\tilde{a}_{t+\delta} = a_t + \delta \cdot v_{\theta^-}(a_t, t, \delta \mid C_{\text{VLM}})$$
-   $$u_{\text{chord}}(a_t, t, 2\delta) = \frac{1}{2} v_{\theta^-}(a_t, t, \delta \mid C_{\text{VLM}}) + \frac{1}{2} v_{\theta^-}(\tilde{a}_{t+\delta}, t+\delta, \delta \mid C_{\text{VLM}})$$
+   扩展动作专家网络输入为 $\left(a _ t, t, \delta\right)$ ，其中 $t \in [0, 1)$ 为当前流时刻， $\delta \in \lbrace2^{-k}\rbrace$ 为目标积分跨度（Step Size）。当跨度从 $\delta$ 倍增至 $2\delta$ 时，利用指数移动平均（EMA）目标网络 $\theta^-$ 执行两次半步积分生成割线目标速度（Chord Velocity）：
+
+$$
+\tilde{a} _ {t+\delta} = a _ t + \delta \cdot v _ {\theta^-}(a _ t, t, \delta \mid C _ {\text{VLM}})
+$$
+
+$$
+u _ {\text{chord}}(a _ t, t, 2\delta) = \frac{1}{2} v _ {\theta^-}(a _ t, t, \delta \mid C _ {\text{VLM}}) + \frac{1}{2} v _ {\theta^-}(\tilde{a} _ {t+\delta}, t+\delta, \delta \mid C _ {\text{VLM}})
+$$
+
    最小化单步跨度预测与双步合成割线之间的 Huber/L2 损失：
-   $$\mathcal{L}_{\text{SnapFlow}}(\theta) = \mathbb{E}_{t, \delta, a_0} \Big[ \big\| v_\theta(a_t, t, 2\delta \mid C_{\text{VLM}}) - \text{sg}\big(u_{\text{chord}}(a_t, t, 2\delta)\big) \big\|_2^2 \Big]$$
+
+$$
+\mathcal{L} _ {\text{SnapFlow}}(\theta) = \mathbb{E} _ {t, \delta, a _ 0} \Big[ \big\Vert v _ \theta(a _ t, t, 2\delta \mid C _ {\text{VLM}}) - \text{sg}\big(u _ {\text{chord}}(a _ t, t, 2\delta)\big) \big\Vert _ 2^2 \Big]
+$$
+
 2. **推理期零迭代一步生成（1-NFE Inference）**：
-   当 $\delta = 1, t = 0$ 时，只需单次前向传播即可直接输出完整动作序列 $\hat{a}_1 = a_0 + v_\theta(a_0, 0, 1 \mid C_{\text{VLM}})$。
+   当 $\delta = 1, t = 0$ 时，只需单次前向传播即可直接输出完整动作序列 $\hat{a} _ 1 = a _ 0 + v _ \theta(a _ 0, 0, 1 \mid C _ {\text{VLM}})$ 。
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在 **LIBERO**（Spatial / Object / Goal / Long）与真实机械臂双臂操作基准上，SnapFlow 将动作专家推理步数从 10 NFE 压缩至 **1 NFE**，动作生成阶段延迟降低 **8.4x**，端到端控制频率提升 **2.6x**，同时保持了原始 10 步模型 **98.5%** 以上的成功率。
@@ -643,8 +703,11 @@
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **指令引导的二分图 KV 软合并（Prompt-Guided Bipartite KV Merging）**：
-   利用文本指令 Token 对视觉 Token 的跨模态注意力选出锚点集合 $\mathcal{A}$ 与待合并集合 $\mathcal{R}$。对于每个被淘汰的视觉 Token $r \in \mathcal{R}$，计算其与锚点 $a \in \mathcal{A}$ 在 Key 空间的余弦相似度分布 $W_{a,r} = \text{Softmax}_a(\beta \cos(K_a, K_r))$，并执行注意力守恒的加权合并：
-   $$\tilde{K}_a = \frac{\alpha_a K_a + \sum_{r \in \mathcal{R}} \alpha_r W_{a,r} K_r}{\alpha_a + \sum_{r \in \mathcal{R}} \alpha_r W_{a,r}}, \qquad \tilde{V}_a = \frac{\alpha_a V_a + \sum_{r \in \mathcal{R}} \alpha_r W_{a,r} V_r}{\alpha_a + \sum_{r \in \mathcal{R}} \alpha_r W_{a,r}}$$
+   利用文本指令 Token 对视觉 Token 的跨模态注意力选出锚点集合 $\mathcal{A}$ 与待合并集合 $\mathcal{R}$ 。对于每个被淘汰的视觉 Token $r \in \mathcal{R}$ ，计算其与锚点 $a \in \mathcal{A}$ 在 Key 空间的余弦相似度分布 $W _ {a,r} = \text{Softmax} _ a(\beta \cos(K _ a, K _ r))$ ，并执行注意力守恒的加权合并：
+
+$$
+\tilde{K} _ a = \frac{\alpha _ a K _ a + \sum _ {r \in \mathcal{R}} \alpha _ r W _ {a,r} K _ r}{\alpha _ a + \sum _ {r \in \mathcal{R}} \alpha _ r W _ {a,r}}, \qquad \tilde{V} _ a = \frac{\alpha _ a V _ a + \sum _ {r \in \mathcal{R}} \alpha _ r W _ {a,r} V _ r}{\alpha _ a + \sum _ {r \in \mathcal{R}} \alpha _ r W _ {a,r}}
+$$
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在 **LLaVA-1.6-34B** 与 **InternVL-2** 上将视觉 KV 缓存直接压缩 **50%–75%**，在 TextVQA、DocVQA 与计数基准上实现 **99.4%** 的原始性能保持率。
@@ -696,22 +759,29 @@
 ```
 
 #### 🎯 背景与痛点 (Background & Pain Points)
-* **原始坐标轴下的通道能量弥散**：在多模态大模型（VLM）中，除序列长度方向（Token 维度）冗余外，注意力头内部的特征维度 $d_k$（如 $d_k=128$）在视觉特征空间中实际上具有极低的本征秩。然而，在原始训练得到的正交基下，信号能量均匀弥散在全部 128 个通道上，直接按坐标轴剪除任何通道都会造成较大的内积误差 $\|Q K^\top - \tilde{Q} \tilde{K}^\top\|_F$。
+* **原始坐标轴下的通道能量弥散**：在多模态大模型（VLM）中，除序列长度方向（Token 维度）冗余外，注意力头内部的特征维度 $d _ k$ （如 $d _ k=128$ ）在视觉特征空间中实际上具有极低的本征秩。然而，在原始训练得到的正交基下，信号能量均匀弥散在全部 128 个通道上，直接按坐标轴剪除任何通道都会造成较大的内积误差 $\Vert Q K^\top - \tilde{Q} \tilde{K}^\top\Vert _ F$ 。
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **RoPE 兼容的分块正交旋转能量集中（RoPE-Compatible Block-Orthogonal Rotation）**：
-   由于旋转位置编码（RoPE）以二维子平面 $(2i, 2i+1)$ 为单位作用：$R_\Theta(m) = \text{diag}(R_{\theta_1}^{(m)}, \dots, R_{\theta_{d_k/2}}^{(m)})$，为保持与 RoPE 的可交换性，RotateK 将 $d_k/2$ 个二维频率对按预期内积能量贡献 $\mathcal{E}_i = \mathbb{E}\big[ \| q_{[2i:2i+1]} \|_2^2 \cdot \| k_{[2i:2i+1]} \|_2^2 \big]$ 进行重排，并在每个同频子空间内执行正交主轴对齐 $U_i \in O(2)$：
-   $$\tilde{W}_Q = W_Q U_{\text{rot}}, \qquad \tilde{W}_K = W_K U_{\text{rot}}$$
+   由于旋转位置编码（RoPE）以二维子平面 $\left(2i, 2i+1\right)$ 为单位作用： $R _ \Theta(m) = \text{diag}(R _ {\theta _ 1}^{(m)}, \dots, R _ {\theta _ {d _ k/2}}^{(m)})$ ，为保持与 RoPE 的可交换性，RotateK 将 $d _ k/2$ 个二维频率对按预期内积能量贡献 $\mathcal{E} _ i = \mathbb{E}\big[ \Vert q _ {[2i:2i+1]} \Vert _ 2^2 \cdot \Vert k _ {[2i:2i+1]} \Vert _ 2^2 \big]$ 进行重排，并在每个同频子空间内执行正交主轴对齐 $U _ i \in O(2)$ ：
+
+$$
+\tilde{W} _ Q = W _ Q U _ {\text{rot}}, \qquad \tilde{W} _ K = W _ K U _ {\text{rot}}
+$$
+
 2. **误差上界最小化通道截断**：
    保留能量最高的前 $r$ 个通道子块，此时注意力 logit 截断误差满足紧上界：
-   $$\mathbb{E}\big[ | q^\top k - \tilde{q}_{1:r}^\top \tilde{k}_{1:r} |^2 \big] \le \sum_{i = r/2 + 1}^{d_k/2} \lambda_i(C_Q) \lambda_i(C_K)$$
+
+$$
+\mathbb{E}\big[ | q^\top k - \tilde{q} _ {1:r}^\top \tilde{k} _ {1:r} |^2 \big] \le \sum _ {i = r/2 + 1}^{d _ k/2} \lambda _ i(C _ Q) \lambda _ i(C _ K)
+$$
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在 **LLaVA-NeXT**、**Qwen2-VL-7B** 与 **InternVL-2** 上，RotateK 剪除 **50%–60% 的 Key 通道**而无需微调，且与视觉 Token 剪枝（如 FastV / VLA-Pruner）**100% 正交兼容**，联合实现 **4.2x** 注意力加速且 VQA 精度损失 `<0.5%`。
 
 #### 🔗 与我们工作（Our Works）的直接关联与落地启发
 * **与我们 `MerA` SVD 初始化及 *Sparsity for Unified Multimodal Models* (TMLR 2026) 的正交协同**：
-  * RotateK 在特征通道维度 $d_k$ 上的正交旋转浓缩与我们在 Token 维度 $N_{\text{vis}}$ 上的剪枝构成了完整的二维矩阵联合低秩逼近（Row + Column Dual Sparsity），可直接嵌入 `vla-distillation` 的视觉前缀压缩器中。
+  * RotateK 在特征通道维度 $d _ k$ 上的正交旋转浓缩与我们在 Token 维度 $N _ {\text{vis}}$ 上的剪枝构成了完整的二维矩阵联合低秩逼近（Row + Column Dual Sparsity），可直接嵌入 `vla-distillation` 的视觉前缀压缩器中。
 
 ---
 
@@ -755,14 +825,17 @@
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **全分支拉推速度场目标（All-Branch Pull-Push Velocity Objective）**：
-   在中间时刻 $t$，从当前状态 $z_t$ 分叉出 $K$ 条带随机扩散项的探索分支 $\{z_1^{(k)}\}_{k=1}^K$，根据终端奖励 $r(z_1^{(k)})$ 计算归一化优势权重 $A_k$，直接构造自引导目标速度向量：
-   $$v_{\text{target}}(z_t, t) = \sum_{k=1}^K \text{Softmax}(\beta A)_k \frac{z_1^{(k)} - z_t}{1 - t} - \lambda_{\text{push}} \sum_{j: A_j < 0} |A_j| \frac{z_1^{(j)} - z_t}{1 - t}$$
+   在中间时刻 $t$ ，从当前状态 $z _ t$ 分叉出 $K$ 条带随机扩散项的探索分支 $\lbrace z _ 1^{(k)}\rbrace _ {k=1}^K$ ，根据终端奖励 $r(z _ 1^{(k)})$ 计算归一化优势权重 $A _ k$ ，直接构造自引导目标速度向量：
+
+$$
+v _ {\text{target}}(z _ t, t) = \sum _ {k=1}^K \text{Softmax}(\beta A) _ k \frac{z _ 1^{(k)} - z _ t}{1 - t} - \lambda _ {\text{push}} \sum _ {j: A _ j < 0} |A _ j| \frac{z _ 1^{(j)} - z _ t}{1 - t}
+$$
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在不加载任何外部教师的情况下，Self-OPD 将 4 步流匹配模型的生成与控制成功率提升 **`+14.2%`**，甚至超越了 50 步原始基准模型。
 
 #### 🔗 与我们工作（Our Works）的直接关联与落地启发
-* **对我们 `vla-distillation` 与 `vla-loop` 的启发**：在 VLA 少步动作生成中，可利用物理仿真器的成功/碰撞反馈作为终端奖励 $r(z_1^{(k)})$，通过 Self-OPD 的全分支拉推速度场目标让 1-NFE / 3-NFE 学生策略超越 10-NFE 模仿学习教师！
+* **对我们 `vla-distillation` 与 `vla-loop` 的启发**：在 VLA 少步动作生成中，可利用物理仿真器的成功/碰撞反馈作为终端奖励 $r(z _ 1^{(k)})$ ，通过 Self-OPD 的全分支拉推速度场目标让 1-NFE / 3-NFE 学生策略超越 10-NFE 模仿学习教师！
 
 ---
 
@@ -803,8 +876,11 @@
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **分片局部直线化的专家向量场分解**：
-   将全局速度场 $v(z_t, t)$ 分解为 $E$ 个局部专家速度场的稀疏组合，并加入专家内轨迹曲率惩罚以促使每个专家负责的局部区域保持直线传输：
-   $$\mathcal{L}_{\text{MoE-FM}} = \mathbb{E}_{t, z_0, z_1} \left[ \left\| \sum_{e \in \text{Top-}k} g_e(z_t, t) v_e(z_t, t) - (z_1 - z_0) \right\|_2^2 + \mu \sum_{e \in \text{Top-}k} g_e(z_t, t) \big\| \partial_t v_e(z_t, t) \big\|_2^2 \right]$$
+   将全局速度场 $v(z _ t, t)$ 分解为 $E$ 个局部专家速度场的稀疏组合，并加入专家内轨迹曲率惩罚以促使每个专家负责的局部区域保持直线传输：
+
+$$
+\mathcal{L} _ {\text{MoE-FM}} = \mathbb{E} _ {t, z _ 0, z _ 1} \left[ \left\lVert \sum _ {e \in \text{Top-}k} g _ e(z _ t, t) v _ e(z _ t, t) - (z _ 1 - z _ 0) \right\rVert _ 2^2 + \mu \sum _ {e \in \text{Top-}k} g _ e(z _ t, t) \big\Vert \partial _ t v _ e(z _ t, t) \big\Vert _ 2^2 \right]
+$$
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在潜空间语言生成与多模态推理中，MoE-FM 在仅使用 **2–4 步 NFE** 时即可达到单稠密流模型 16–32 步的生成质量，推理延迟降低 **3.8x**。
@@ -851,19 +927,23 @@
 ```
 
 #### 🎯 背景与痛点 (Background & Pain Points)
-* **离线流匹配蒸馏的“轨迹偏离暴露偏差（Off-Manifold Exposure Bias）”**：在将 50 步流匹配（Flow Matching）模型蒸馏为 1–4 步极速学生模型时，传统离线蒸馏仅在教师生成的理想直线插值轨迹 $z_t = (1-t)z_0 + t z_1$ 上监督学生。然而在实际少步推理时，学生模型第 1 步的微小离散化误差就会使其落入教师从未示范过的流形外区域（Off-Manifold State），导致后续步骤误差滚雪球式发散。
+* **离线流匹配蒸馏的“轨迹偏离暴露偏差（Off-Manifold Exposure Bias）”**：在将 50 步流匹配（Flow Matching）模型蒸馏为 1–4 步极速学生模型时，传统离线蒸馏仅在教师生成的理想直线插值轨迹 $z _ t = (1-t)z _ 0 + t z _ 1$ 上监督学生。然而在实际少步推理时，学生模型第 1 步的微小离散化误差就会使其落入教师从未示范过的流形外区域（Off-Manifold State），导致后续步骤误差滚雪球式发散。
 
 #### 💡 核心方法与数学公式 (Core Methodology & Math)
 1. **学生在线轨迹上的速度场拉回目标（On-Policy Velocity Pull-Back）**：
-   令学生少步求解器从高斯噪声 $z_0 \sim \mathcal{N}(0, I)$ 出发自回归生成在线状态序列 $\{\tilde{z}_{t_k}\}_{k=0}^{K-1}$。在学生真实到达的状态 $\tilde{z}_{t_k}$ 处调用教师速度场 $u_\phi(\tilde{z}_{t_k}, t_k)$ 计算拉回目标：
-   $$\mathcal{L}_{\text{Flow-OPD}}(\theta) = \mathbb{E}_{z_0, k} \Big[ w(t_k) \big\| v_\theta(\text{sg}(\tilde{z}_{t_k}), t_k) - u_\phi(\text{sg}(\tilde{z}_{t_k}), t_k) \big\|_2^2 \Big]$$
+   令学生少步求解器从高斯噪声 $z _ 0 \sim \mathcal{N}(0, I)$ 出发自回归生成在线状态序列 $\lbrace\tilde{z} _ {t _ k}\rbrace _ {k=0}^{K-1}$ 。在学生真实到达的状态 $\tilde{z} _ {t _ k}$ 处调用教师速度场 $u _ \phi(\tilde{z} _ {t _ k}, t _ k)$ 计算拉回目标：
+
+$$
+\mathcal{L} _ {\text{Flow-OPD}}(\theta) = \mathbb{E} _ {z _ 0, k} \Big[ w(t _ k) \big\Vert v _ \theta(\text{sg}(\tilde{z} _ {t _ k}), t _ k) - u _ \phi(\text{sg}(\tilde{z} _ {t _ k}), t _ k) \big\Vert _ 2^2 \Big]
+$$
+
    其中 $\text{sg}(\cdot)$ 表示停止梯度算子，确保学生学会从自身产生的离散化偏移状态中主动修正回真实数据流形。
 
 #### 📊 关键实验与结论 (Key Experiments & Takeaways)
 * 在 2 步与 4 步流匹配生成基准上，Flow-OPD 将 FID 与条件指令遵循得分相比离线轨迹蒸馏（Reflow / Progressive Distillation）提升 **`18%–27%`**。
 
 #### 🔗 与我们工作（Our Works）的直接关联与落地启发
-* **直接印证我们 `vla-distillation` 定律 G16（MerA-VelLoRA $\times$ Closed-Loop DAgger）与 G27 v3**：
+* **直接印证我们 `vla-distillation` 定律 G16（MerA-VelLoRA × Closed-Loop DAgger）与 G27 v3**：
   * Flow-OPD 在ODE轨迹内部的状态级 On-Policy Velocity Pull-Back 与我们在 `vla-distillation` 中提出的闭环 DAgger 状态重采样互为“步内（Intra-Chunk）”与“步间（Inter-Chunk）”对偶！将两者结合即可同时消除少步 ODE 离散化漂移与环境交互累积误差。
 
 ---
@@ -892,10 +972,14 @@
 
 #### 💡 核心方法与原文底层数学实现 (Mathematical Formulations)
 1. **多模态局部几何锚点矩阵 (Multimodal Geometric Anchors)**：
-   - 在第 $l$ 层提取多模态激活流形 $\mathcal{M}_l$ 上的代表性锚点子集 $\mathcal{A}_l = \{a_1, a_2, \dots, a_K\} \subset \mathbb{R}^{d}$；
-   - 求解局部切空间的主成分基底，定义层级几何表征流形失真度指标 $\mathcal{D}_l$：
-     $$\mathcal{D}_l \triangleq \frac{1}{K} \sum_{k=1}^K \left\| a_k - \Pi_{\mathcal{A}_{l-1}}(a_k) \right\|_2^2$$
-   - 当 $\mathcal{D}_l < \tau_{\text{layer}}$ 时，判定该层为表征阶梯中的平坦饱和层，可安全丢弃。
+   - 在第 $l$ 层提取多模态激活流形 $\mathcal{M} _ l$ 上的代表性锚点子集 $\mathcal{A} _ l = \lbrace a _ 1, a _ 2, \dots, a _ K\rbrace \subset \mathbb{R}^{d}$ ；
+   - 求解局部切空间的主成分基底，定义层级几何表征流形失真度指标 $\mathcal{D} _ l$ ：
+
+$$
+\mathcal{D} _ l \triangleq \frac{1}{K} \sum _ {k=1}^K \left\lVert a _ k - \Pi _ {\mathcal{A} _ {l-1}}(a _ k) \right\rVert _ 2^2
+$$
+
+   - 当 $\mathcal{D} _ l < \tau _ {\text{layer}}$ 时，判定该层为表征阶梯中的平坦饱和层，可安全丢弃。
 2. **锚点引导的动态 Token 稀疏过滤 (Anchor-Guided Token Sparsification)**：
    - 仅保留与核心几何锚点内积相似度大于动态阈值的 Token，在浅层过滤掉 50% 以上的无用背景 Patch，同时维持深层关键语义边界。
 
@@ -912,7 +996,7 @@
   * 我们在 *ICML 26* 与 *TMLR 25* 中奠定了从“表征层级阶梯（Representation Hierarchies）”解释剪枝机理的理论基石；
   * *AnchorPrune* 将我们的层级冗余理论推进到了“层丢弃（Layer Dropping）与 Token 动态稀疏（Token Sparsity）的二维联合优化”，提供了具体的几何锚点判据；
 * **💡 下一阶段研究（Next Research Directions）落地启发**：
-  * 可直接将锚点流形失真度 $\mathcal{D}_l$ 集成至我们的多模态轻量化评估脚本中，作为我们后续多模态稀疏化大模型训练的正则化损失函数。
+  * 可直接将锚点流形失真度 $\mathcal{D} _ l$ 集成至我们的多模态轻量化评估脚本中，作为我们后续多模态稀疏化大模型训练的正则化损失函数。
 
 ---
 
